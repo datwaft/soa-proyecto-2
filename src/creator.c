@@ -27,5 +27,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  strcpy(shared_memory->message, "Hello, World!");
+
   return EXIT_SUCCESS;
 }

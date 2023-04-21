@@ -5,7 +5,7 @@
 #define IPC_FAILURE -1
 
 typedef struct shared_mem_st {
-  int array[5];
+  char message[1 << 16];
 } shared_mem_t;
 
 shared_mem_t *create_shared_memory(const char *name);

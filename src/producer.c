@@ -27,5 +27,11 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  strcpy(shared_memory->message,
+         strcmp(shared_memory->message, "Hello, World!") == 0
+             ? "Goodbye, World!"
+             : "Hello, World!");
+  log_info("The new message is '%s'", shared_memory->message);
+
   return EXIT_SUCCESS;
 }

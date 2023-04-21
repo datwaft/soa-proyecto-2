@@ -27,5 +27,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  log_info("The current message is '%s'", shared_memory->message);
+
   return EXIT_SUCCESS;
 }
