@@ -26,8 +26,10 @@ int main(int argc, char *argv[]) {
               strerror(errno));
     return EXIT_FAILURE;
   }
+  log_info("Created shared memory with buffer name '%s'", buffer_name);
 
   strcpy(shared_memory->message, "Hello, World!");
+  log_info("Initialized 'message' shared variable to \"Hello, World!\"");
 
   return EXIT_SUCCESS;
 }

@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
               strerror(errno));
     return EXIT_FAILURE;
   }
+  log_info("Freed shared memory with buffer name '%s'", buffer_name);
 
   return EXIT_SUCCESS;
 }
