@@ -18,7 +18,7 @@ TEST_BUILD_DIR := $(BUILD_DIR)/tests
 # ---------------
 # Target variable
 # ---------------
-TARGET := $(BUILD_DIR)/main
+TARGET := $(BUILD_DIR)/creator $(BUILD_DIR)/producer $(BUILD_DIR)/consumer $(BUILD_DIR)/finalizer
 
 # ---------------------
 # Source file variables
@@ -70,7 +70,7 @@ all_tests: $(TEST_TARGETS)
 .PHONY: dist
 dist: $(DIST)
 
-$(TARGET): $(TARGET_OBJ) $(OBJS)
+$(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
