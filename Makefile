@@ -101,31 +101,35 @@ $(SRC_DIR) $(HEADER_DIR) $(RESOURCES_DIR) $(TEST_DIR):
 # ========================
 # Pseudo-target definition
 # ========================
+.PHONY: help
+help: ## Show this help
+	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
 .PHONY: test
-test: $(TEST_TARGETS)
+test: $(TEST_TARGETS) ## Execute every test target
 	for test_file in $^; do ./$$test_file; done
 
 .PHONY: clean
-clean:
+clean: ## Remove build and directory targets
 	$(RM) -rf $(BUILD_DIR)
 	$(RM) -f $(DIST)
 
 .PHONY: install-hooks
-install-hooks:
+install-hooks: ## Install git hooks
 	pre-commit install
 	pre-commit install --hook-type commit-msg
 
 .PHONY: run-hooks
-run-hooks:
+run-hooks: ## Execute git hooks
 	pre-commit run --all-files
 
 .PHONY: lint
-lint:
+lint: ## Execute clang-tidy over the project
 	clang-tidy $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS)
 
 .PHONY: format
-format: $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS)
-	for file in $^; do clang-format -i $$file; done
+format: ## Execute clang-format over the project
+	for file in $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS); do clang-format -i $$file; done
 
 # -------------
 -include $(DEPS)
