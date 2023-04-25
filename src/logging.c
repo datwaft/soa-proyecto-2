@@ -35,7 +35,7 @@ void log_info(const char *message, ...) {
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
-  vprintf(message_with_timestamp, args);
+  vfprintf(stderr, message_with_timestamp, args);
 #pragma clang diagnostic pop
 
   va_end(args);
@@ -66,7 +66,7 @@ void log_warn(const char *message, ...) {
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
-  vprintf(message_with_timestamp, args);
+  vfprintf(stderr, message_with_timestamp, args);
 #pragma clang diagnostic pop
 
   va_end(args);
@@ -97,7 +97,7 @@ void log_error(const char *message, ...) {
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
-  vprintf(message_with_timestamp, args);
+  vfprintf(stderr, message_with_timestamp, args);
 #pragma clang diagnostic pop
 
   va_end(args);
