@@ -1,6 +1,6 @@
-#include "message.h"
 #include <criterion/criterion.h>
-#include <stdio.h>
+
+#include "message.h"
 
 Test(message_new, valid) {
   message_t message = message_new(1);
