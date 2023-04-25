@@ -14,6 +14,7 @@ TEST_DIR := tests
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 TEST_BUILD_DIR := $(BUILD_DIR)/tests
+TEST_OBJ_DIR := $(TEST_BUILD_DIR)/obj
 
 # ---------------
 # Target variable
@@ -31,16 +32,17 @@ TEST_SRCS := $(shell find $(TEST_DIR) -name '*.c' 2> /dev/null)
 # -------------------
 # Byproduct variables
 # -------------------
-TARGET_OBJ := $(TARGET:$(BUILD_DIR)/%=$(OBJ_DIR)/%.o)
+TARGET_OBJS := $(TARGET:$(BUILD_DIR)/%=$(OBJ_DIR)/%.o)
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-DEPS := $(OBJS:.o=.d) $(TEST_SRCS:$(TEST_DIR)/%.c=$(TEST_BUILD_DIR)/%.d)
+TEST_OBJS := $(TEST_SRCS:$(TEST_DIR)/%.c=$(TEST_OBJ_DIR)/%.o)
+DEPS := $(OBJS:.o=.d) $(TARGET_OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 
-.SECONDARY: $(OBJS) $(TARGET_OBJ) $(DEPS)
+.SECONDARY: $(OBJS) $(TEST_OBJS) $(TARGET_OBJS) $(DEPS)
 
 # --------------
 # Test variables
 # --------------
-TEST_TARGETS := $(TEST_SRCS:$(TEST_DIR)/%.c=$(TEST_BUILD_DIR)/%)
+TEST_TARGET := $(TEST_SRCS:$(TEST_DIR)/%.c=$(TEST_BUILD_DIR)/%)
 
 # ----------------------
 # Distribution variables
@@ -63,30 +65,35 @@ LDFLAGS +=
 # =================
 # Compilation rules
 # =================
-.PHONY: all all_tests
+.PHONY: all
 all: $(TARGET)
-all_tests: $(TEST_TARGETS)
+
+.PHONY: all_tests
+all_tests: $(TEST_TARGET)
 
 .PHONY: dist
 dist: $(DIST)
 
-$(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS)
-	@mkdir -p $(@D)
+$(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
-$(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
+$(TEST_BUILD_DIR)/%: $(TEST_OBJ_DIR)/%.o $(OBJS) | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(@D)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(OBJ_DIR)/%.d | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c $(TEST_OBJ_DIR)/%.d | $(TEST_OBJ_DIR)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+# See https://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+$(DEPS):
 
 # =================
 # Distribution rule
 # =================
-$(DIST): $(SRC_DIR) $(HEADER_DIR) $(RESOURCE_INDEX) $(RESOURCES_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
+$(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
 	mkdir $(basename $@)
 	cp -r $^ $(basename $@)
 	tar -zcvf $@ $(basename $@)
@@ -95,41 +102,37 @@ $(DIST): $(SRC_DIR) $(HEADER_DIR) $(RESOURCE_INDEX) $(RESOURCES_DIR) $(TEST_DIR)
 # ========================
 # Directory creation rules
 # ========================
-$(SRC_DIR) $(HEADER_DIR) $(RESOURCES_DIR) $(TEST_DIR):
+$(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(BUILD_DIR) $(OBJ_DIR) $(DEP_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR):
 	mkdir -p $@
 
 # ========================
 # Pseudo-target definition
 # ========================
-.PHONY: help
-help: ## Show this help
-	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
 .PHONY: test
-test: $(TEST_TARGETS) ## Execute every test target
+test: $(TEST_TARGET)
 	for test_file in $^; do ./$$test_file; done
 
 .PHONY: clean
-clean: ## Remove build and directory targets
+clean:
 	$(RM) -rf $(BUILD_DIR)
 	$(RM) -f $(DIST)
 
 .PHONY: install-hooks
-install-hooks: ## Install git hooks
+install-hooks:
 	pre-commit install
 	pre-commit install --hook-type commit-msg
 
 .PHONY: run-hooks
-run-hooks: ## Execute git hooks
+run-hooks:
 	pre-commit run --all-files
 
 .PHONY: lint
-lint: ## Execute clang-tidy over the project
+lint:
 	clang-tidy $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS)
 
 .PHONY: format
-format: ## Execute clang-format over the project
-	for file in $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS); do clang-format -i $$file; done
+format: $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS)
+	for file in $^; do clang-format -i $$file; done
 
 # -------------
--include $(DEPS)
+-include $(wildcard $(DEPS))
