@@ -59,7 +59,7 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 CFLAGS += -std=gnu11
 CPPFLAGS += -I$(HEADER_DIR) -MMD -MP
-LDLIBS += -lm
+LDLIBS += -lm -pthread
 LDFLAGS +=
 
 # =================
