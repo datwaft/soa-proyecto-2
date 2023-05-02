@@ -31,6 +31,13 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  log_info("Setting finished flag to "
+           "\x1b[1;3m"
+           "true"
+           "\x1b[22;23m");
+  atomic_boolean_set(&shared_memory->finished_flag, true);
+  sem_post(&shared_memory->empty);
+
   atomic_integer_destroy(&shared_memory->consumer_id);
   log_info("Destroyed consumer id mutex");
 

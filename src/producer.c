@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "datetime.h"
@@ -73,6 +74,19 @@ int main(int argc, char *argv[]) {
     }
     sem_wait(&shared_memory->empty);
 
+    if (atomic_boolean_get(&shared_memory->finished_flag)) {
+      log_info("Detected "
+               "\x1b[3m"
+               "finished"
+               "\x1b[23m"
+               " flag set to "
+               "\x1b[1;3m"
+               "true"
+               "\x1b[22;23m");
+      sem_post(&shared_memory->empty);
+      break;
+    }
+
     message_t message = message_new(id);
     bool is_success = circbuf_atomic_push(&shared_memory->circbuf, message);
     if (!is_success) {
@@ -95,8 +109,13 @@ int main(int argc, char *argv[]) {
     usleep(delay_us * 1e3);
   } while (true);
 
-  atomic_integer_sub(&shared_memory->active_producer_counter, 1);
-  log_info("Decreased active producer counter");
+  int64_t new_counter_value =
+      atomic_integer_sub(&shared_memory->active_producer_counter, 1);
+  log_info("Decreased active producer counter to "
+           "\x1b[1;3m"
+           "%ld"
+           "\x1b[22;33m",
+           new_counter_value);
 
   return EXIT_SUCCESS;
 }

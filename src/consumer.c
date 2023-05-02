@@ -91,8 +91,13 @@ int main(int argc, char *argv[]) {
     usleep(delay_us * 1e3);
   } while (true);
 
-  atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
-  log_info("Decreased active consumer counter");
+  int64_t new_counter_value =
+      atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
+  log_info("Decreased active consumer counter to "
+           "\x1b[1;3m"
+           "%ld"
+           "\x1b[22;33m",
+           new_counter_value);
 
   return EXIT_SUCCESS;
 }
