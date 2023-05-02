@@ -63,15 +63,15 @@ Test(circbuf_push, invalid) {
   cr_expect_eq(circbuf.tail, 0);
 }
 
-Test(circbuf_pip, valid) {
+Test(circbuf_pop, valid) {
   circbuf_t circbuf = circbuf_new();
-  circbuf_push(&circbuf, message_new(99));
+  circbuf_push(&circbuf, message_new(88));
   circbuf_push(&circbuf, message_new(99));
   circbuf_push(&circbuf, message_new(1));
   circbuf_push(&circbuf, message_new(2));
   circbuf_push(&circbuf, message_new(3));
-  circbuf_pop(&circbuf);
-  circbuf_pop(&circbuf);
+  cr_expect_eq(circbuf_pop(&circbuf).producer_id, 88);
+  cr_expect_eq(circbuf_pop(&circbuf).producer_id, 99);
 
   cr_expect_eq(circbuf.array[2].producer_id, 1);
   cr_expect_eq(circbuf.array[3].producer_id, 2);
