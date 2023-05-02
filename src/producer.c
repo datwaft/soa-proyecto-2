@@ -7,6 +7,8 @@
 #include <string.h>
 
 #include "atomic_integer.h"
+#include "circbuf.h"
+#include "datetime.h"
 #include "logging.h"
 #include "message.h"
 #include "shared_memory.h"
@@ -39,6 +41,22 @@ int main(int argc, char *argv[]) {
            "\x1b[22m"
            " as the producer id",
            id);
+
+  do {
+    sem_wait(&shared_memory->empty);
+
+    message_t message = message_new(id);
+    bool is_success = circbuf_atomic_push(&shared_memory->circbuf, message);
+    if (!is_success) {
+      log_warn("Something went wrong, producer tried to push into full "
+               "circular buffer");
+    }
+    char message_string[83 + TIMESTAMP_LENGTH + 1];
+    message_tostring(&message, message_string);
+    log_info("Pushed %s into circular buffer", message_string);
+
+    sem_post(&shared_memory->full);
+  } while (true);
 
   return EXIT_SUCCESS;
 }
