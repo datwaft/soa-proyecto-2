@@ -1,11 +1,14 @@
 #ifndef SHARED_MEMORY_H
 #define SHARED_MEMORY_H
 
+#include "atomic_integer.h"
+
 #define IPC_SUCCESS 0
 #define IPC_FAILURE -1
 
 typedef struct shared_mem_st {
-  char message[1 << 16];
+  atomic_integer_t producer_id;
+  atomic_integer_t consumer_id;
 } shared_mem_t;
 
 shared_mem_t *create_shared_memory(const char *name);

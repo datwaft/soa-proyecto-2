@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_integer.h"
 #include "logging.h"
 #include "shared_memory.h"
 
@@ -30,6 +31,20 @@ int main(int argc, char *argv[]) {
            "%s"
            "\x1b[22;23m",
            buffer_name);
+
+  shared_memory->consumer_id = atomic_integer_new(0);
+  log_info("Initialized consumer id counter with "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           atomic_integer_get(&shared_memory->consumer_id));
+
+  shared_memory->producer_id = atomic_integer_new(0);
+  log_info("Initialized producer id counter with "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           atomic_integer_get(&shared_memory->producer_id));
 
   return EXIT_SUCCESS;
 }

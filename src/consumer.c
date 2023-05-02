@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_integer.h"
 #include "logging.h"
 #include "shared_memory.h"
 
@@ -26,6 +27,14 @@ int main(int argc, char *argv[]) {
               strerror(errno));
     return EXIT_FAILURE;
   }
+
+  int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
+  log_info("Assigned "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m"
+           " as the consumer id",
+           id);
 
   return EXIT_SUCCESS;
 }
