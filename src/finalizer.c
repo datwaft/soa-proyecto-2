@@ -22,11 +22,16 @@ int main(int argc, char *argv[]) {
   if (err_free == IPC_FAILURE) {
     log_error("Error while freeing shared memory: "
               "\x1b[1m"
-              "%s",
+              "%s"
+              "\x1b[22m",
               strerror(errno));
     return EXIT_FAILURE;
   }
-  log_info("Freed shared memory with buffer name '%s'", buffer_name);
+  log_info("Freed shared memory with buffer name "
+           "\x1b[1;3m"
+           "%s"
+           "\x1b[22;23m",
+           buffer_name);
 
   return EXIT_SUCCESS;
 }

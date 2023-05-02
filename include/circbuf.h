@@ -1,10 +1,10 @@
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
-#include "message.h"
-
 #include <stdbool.h>
 #include <stddef.h>
+
+#include "message.h"
 
 #define CIRCBUF_MAX_SIZE 16
 

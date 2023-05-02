@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,16 +23,11 @@ int main(int argc, char *argv[]) {
   if (shared_memory == (void *)IPC_FAILURE) {
     log_error("Error while obtaining shared memory: "
               "\x1b[1m"
-              "%s",
+              "%s"
+              "\x1b[22m",
               strerror(errno));
     return EXIT_FAILURE;
   }
-
-  strcpy(shared_memory->message,
-         strcmp(shared_memory->message, "Hello, World!") == 0
-             ? "Goodbye, World!"
-             : "Hello, World!");
-  log_info("The new message is '%s'", shared_memory->message);
 
   return EXIT_SUCCESS;
 }

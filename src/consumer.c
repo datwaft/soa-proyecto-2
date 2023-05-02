@@ -22,12 +22,11 @@ int main(int argc, char *argv[]) {
   if (shared_memory == (void *)IPC_FAILURE) {
     log_error("Error while obtaining shared memory: "
               "\x1b[1m"
-              "%s",
+              "%s"
+              "\x1b[22m",
               strerror(errno));
     return EXIT_FAILURE;
   }
-
-  log_info("The current message is '%s'", shared_memory->message);
 
   return EXIT_SUCCESS;
 }

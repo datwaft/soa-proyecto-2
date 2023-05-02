@@ -1,5 +1,4 @@
 #include "circbuf.h"
-#include "message.h"
 
 circbuf_t circbuf_new(void) {
   return (circbuf_t){
