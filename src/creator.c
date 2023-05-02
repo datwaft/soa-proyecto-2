@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "logging.h"
@@ -87,6 +88,13 @@ int main(int argc, char *argv[]) {
            "%d"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->active_producer_counter));
+
+  shared_memory->finished_flag = atomic_boolean_new(false);
+  log_info("Initialized "
+           "\x1b[3m"
+           "finished"
+           "\x1b[23m"
+           " flag");
 
   return EXIT_SUCCESS;
 }

@@ -3,6 +3,7 @@
 
 #include <semaphore.h>
 
+#include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
 
@@ -17,6 +18,7 @@ typedef struct shared_mem_st {
   sem_t full;
   atomic_integer_t active_producer_counter;
   atomic_integer_t active_consumer_counter;
+  atomic_boolean_t finished_flag;
 } shared_mem_t;
 
 shared_mem_t *create_shared_memory(const char *name);

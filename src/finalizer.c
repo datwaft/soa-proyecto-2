@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "logging.h"
@@ -58,6 +59,13 @@ int main(int argc, char *argv[]) {
 
   atomic_integer_destroy(&shared_memory->active_producer_counter);
   log_info("Destroyed active producer counter mutex");
+
+  atomic_boolean_destroy(&shared_memory->finished_flag);
+  log_info("Destroyed "
+           "\x1b[3m"
+           "finished"
+           "\x1b[23m"
+           " flag mutex");
 
   int err_free = free_shared_memory(buffer_name);
   if (err_free == IPC_FAILURE) {
