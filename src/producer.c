@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <semaphore.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,6 +8,7 @@
 
 #include "atomic_integer.h"
 #include "logging.h"
+#include "message.h"
 #include "shared_memory.h"
 
 int main(int argc, char *argv[]) {
@@ -30,7 +32,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  int64_t id = atomic_integer_add(&shared_memory->producer_id, 1);
+  const int64_t id = atomic_integer_add(&shared_memory->producer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
            "%d"

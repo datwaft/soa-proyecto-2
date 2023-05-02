@@ -1,6 +1,8 @@
 #ifndef SHARED_MEMORY_H
 #define SHARED_MEMORY_H
 
+#include <semaphore.h>
+
 #include "atomic_integer.h"
 #include "circbuf.h"
 
@@ -11,6 +13,8 @@ typedef struct shared_mem_st {
   atomic_integer_t producer_id;
   atomic_integer_t consumer_id;
   circbuf_t circbuf;
+  sem_t empty;
+  sem_t full;
 } shared_mem_t;
 
 shared_mem_t *create_shared_memory(const char *name);

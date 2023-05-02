@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,20 @@ int main(int argc, char *argv[]) {
 
   circbuf_destroy(&shared_memory->circbuf);
   log_info("Destroyed circular buffer mutex");
+
+  sem_destroy(&shared_memory->empty);
+  log_info("Destroyed "
+           "\x1b[3m"
+           "empty"
+           "\x1b[23m"
+           " semaphore");
+
+  sem_destroy(&shared_memory->full);
+  log_info("Destroyed "
+           "\x1b[3m"
+           "full"
+           "\x1b[23m"
+           " semaphore");
 
   int err_free = free_shared_memory(buffer_name);
   if (err_free == IPC_FAILURE) {

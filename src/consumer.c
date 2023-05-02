@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
+  const int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
            "%d"

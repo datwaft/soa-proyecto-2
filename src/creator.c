@@ -1,4 +1,6 @@
 #include <errno.h>
+#include <semaphore.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +51,28 @@ int main(int argc, char *argv[]) {
 
   shared_memory->circbuf = circbuf_new();
   log_info("Initialized circular buffer");
+
+  sem_init(&shared_memory->empty, true, CIRCBUF_MAX_SIZE);
+  log_info("Initialized "
+           "\x1b[3m"
+           "empty"
+           "\x1b[23m"
+           " semaphore with a value of "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           CIRCBUF_MAX_SIZE);
+
+  sem_init(&shared_memory->full, true, 0);
+  log_info("Initialized "
+           "\x1b[3m"
+           "full"
+           "\x1b[23m"
+           " semaphore with a value of "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           0);
 
   return EXIT_SUCCESS;
 }
