@@ -4,6 +4,9 @@
 // Display an information message to stderr with its timestamp.
 void log_info(const char *message, ...);
 
+// Display an important message to stderr with its timestamp.
+void log_important(const char *message, ...);
+
 // Display a warning message to stderr with its timestamp.
 void log_warn(const char *message, ...);
 

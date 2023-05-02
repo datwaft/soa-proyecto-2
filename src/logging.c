@@ -41,6 +41,37 @@ void log_info(const char *message, ...) {
   va_end(args);
 }
 
+void log_important(const char *message, ...) {
+  const size_t message_length = strlen(message);
+
+  char timestamp[TIMESTAMP_LENGTH + 1];
+  time_t s, ms;
+  time_since_epoch(&s, &ms);
+  get_timestamp(timestamp, s, ms);
+
+  char message_with_timestamp[5 + 4 + TIMESTAMP_LENGTH + 5 + message_length +
+                              4 + 1 + 1];
+  sprintf(message_with_timestamp,
+          "\x1b[34m"
+          "\x1b[2m"
+          "[%s]"
+          "\x1b[22m"
+          " %s"
+          "\x1b[0m"
+          "\n",
+          timestamp, message);
+
+  va_list args;
+  va_start(args, message);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+  vfprintf(stderr, message_with_timestamp, args);
+#pragma clang diagnostic pop
+
+  va_end(args);
+}
+
 void log_warn(const char *message, ...) {
   const size_t message_length = strlen(message);
 
