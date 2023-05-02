@@ -46,8 +46,8 @@ Test(circbuf_push, valid) {
 
   cr_expect_arr_eq(circbuf.array, expected, CIRCBUF_MAX_SIZE);
   cr_expect_eq(circbuf.size, 3);
-  cr_expect_eq(circbuf.head, 0);
-  cr_expect_eq(circbuf.tail, 3);
+  cr_expect_eq(circbuf.head, 3);
+  cr_expect_eq(circbuf.tail, 0);
 }
 
 Test(circbuf_push, invalid) {
@@ -77,8 +77,8 @@ Test(circbuf_pip, valid) {
   cr_expect_eq(circbuf.array[3].producer_id, 2);
   cr_expect_eq(circbuf.array[4].producer_id, 3);
   cr_expect_eq(circbuf.size, 3);
-  cr_expect_eq(circbuf.head, 2);
-  cr_expect_eq(circbuf.tail, 5);
+  cr_expect_eq(circbuf.head, 5);
+  cr_expect_eq(circbuf.tail, 2);
 }
 
 Test(circbuf_pop, invalid) {
