@@ -25,7 +25,7 @@ shared_mem_t *create_shared_memory(const char *name) {
 }
 
 shared_mem_t *get_shared_memory(const char *name) {
-  int fd = shm_open(name, O_RDWR);
+  int fd = shm_open(name, O_RDWR, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     return (void *)IPC_FAILURE;
   }
