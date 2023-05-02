@@ -2,24 +2,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "datetime.h"
 #include "logging.h"
 #include "message.h"
+#include "random.h"
 #include "shared_memory.h"
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  if (argc < 3) {
     fprintf(stderr,
-            "Usage: %s <buffer name>"
+            "Usage: %s <buffer name> <delay mean in seconds>"
             "\n",
             argv[0]);
     return EXIT_FAILURE;
   }
 
   const char *buffer_name = argv[1];
+  const int delay_mean_ms = atoi(argv[2]) * 1e3;
+  log_info("The mean of the delay is "
+           "\x1b[3m"
+           "%d"
+           "\x1b[23m"
+           "ms",
+           delay_mean_ms);
+
+  const double lambda = 1.0 / delay_mean_ms;
+  log_info("λ is set to "
+           "\x1b[3m"
+           "%f"
+           "\x1b[23m",
+           lambda);
 
   shared_mem_t *shared_memory = get_shared_memory(buffer_name);
   if (shared_memory == (void *)IPC_FAILURE) {
@@ -52,6 +68,15 @@ int main(int argc, char *argv[]) {
     log_info("Consumed %s from circular buffer", message_string);
 
     sem_post(&shared_memory->empty);
+
+    int64_t delay_us = rand_exp(lambda);
+    log_info("Waiting "
+             "\x1b[3m"
+             "%ld"
+             "\x1b[23m"
+             "ms before consuming once again...",
+             delay_us);
+    usleep(delay_us * 1e3);
   } while (true);
 
   return EXIT_SUCCESS;
