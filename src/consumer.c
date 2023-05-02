@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,10 @@
 #include "random.h"
 #include "shared_memory.h"
 
+static shared_mem_t *shared_memory;
+
+static void interrupt_handler(int signal);
+
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     fprintf(stderr,
@@ -20,6 +25,8 @@ int main(int argc, char *argv[]) {
             argv[0]);
     return EXIT_FAILURE;
   }
+
+  sigaction(SIGINT, &(struct sigaction){.sa_handler = interrupt_handler}, NULL);
 
   const char *buffer_name = argv[1];
   const double delay_mean_ms = atof(argv[2]) * 1e3;
@@ -37,7 +44,7 @@ int main(int argc, char *argv[]) {
            "\x1b[23m",
            lambda);
 
-  shared_mem_t *shared_memory = get_shared_memory(buffer_name);
+  shared_memory = get_shared_memory(buffer_name);
   if (shared_memory == (void *)IPC_FAILURE) {
     log_error("Error while obtaining shared memory: "
               "\x1b[1m"
@@ -118,4 +125,16 @@ int main(int argc, char *argv[]) {
            new_counter_value);
 
   return EXIT_SUCCESS;
+}
+
+void interrupt_handler(int signal) {
+  int64_t new_counter_value =
+      atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
+  fprintf(stderr, "\n");
+  log_info("Decreased active consumer counter to "
+           "\x1b[1;3m"
+           "%ld"
+           "\x1b[22;33m",
+           new_counter_value);
+  exit(EXIT_SUCCESS);
 }
