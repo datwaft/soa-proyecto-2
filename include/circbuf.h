@@ -33,4 +33,6 @@ bool circbuf_atomic_push(circbuf_t *circbuf, message_t message);
 
 message_t circbuf_atomic_pop(circbuf_t *circbuf);
 
+void circbuf_destroy(circbuf_t *circbuf);
+
 #endif // !CIRCULAR_BUFFER_H

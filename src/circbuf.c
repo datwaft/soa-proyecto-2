@@ -60,3 +60,5 @@ message_t circbuf_atomic_pop(circbuf_t *circbuf) {
   sem_post(&circbuf->mutex);
   return result;
 }
+
+void circbuf_destroy(circbuf_t *circbuf) { sem_destroy(&circbuf->mutex); }

@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_integer.h"
+#include "circbuf.h"
 #include "logging.h"
 #include "shared_memory.h"
 
@@ -16,6 +18,25 @@ int main(int argc, char *argv[]) {
   }
 
   const char *buffer_name = argv[1];
+
+  shared_mem_t *shared_memory = get_shared_memory(buffer_name);
+  if (shared_memory == (void *)IPC_FAILURE) {
+    log_error("Error while obtaining shared memory: "
+              "\x1b[1m"
+              "%s"
+              "\x1b[22m",
+              strerror(errno));
+    return EXIT_FAILURE;
+  }
+
+  atomic_integer_destroy(&shared_memory->consumer_id);
+  log_info("Destroyed consumer id mutex");
+
+  atomic_integer_destroy(&shared_memory->producer_id);
+  log_info("Destroyed producer id mutex");
+
+  circbuf_destroy(&shared_memory->circbuf);
+  log_info("Destroyed circular buffer mutex");
 
   int err_free = free_shared_memory(buffer_name);
   if (err_free == IPC_FAILURE) {

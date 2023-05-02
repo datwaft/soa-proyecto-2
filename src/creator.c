@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "atomic_integer.h"
+#include "circbuf.h"
 #include "logging.h"
 #include "shared_memory.h"
 
@@ -45,6 +46,9 @@ int main(int argc, char *argv[]) {
            "%d"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->producer_id));
+
+  shared_memory->circbuf = circbuf_new();
+  log_info("Initialized circular buffer");
 
   return EXIT_SUCCESS;
 }
