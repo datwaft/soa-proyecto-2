@@ -36,7 +36,12 @@ int main(int argc, char *argv[]) {
            "true"
            "\x1b[22;23m");
   atomic_boolean_set(&shared_memory->finished_flag, true);
-  sem_post(&shared_memory->empty);
+
+  log_info("Waiting for the active producer counter to reach 0...");
+  while (atomic_integer_get(&shared_memory->active_producer_counter) > 0) {
+    sem_post(&shared_memory->empty);
+    sem_wait(&shared_memory->empty);
+  }
 
   atomic_integer_destroy(&shared_memory->consumer_id);
   log_info("Destroyed consumer id mutex");
