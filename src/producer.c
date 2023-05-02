@@ -25,10 +25,10 @@ int main(int argc, char *argv[]) {
   }
 
   const char *buffer_name = argv[1];
-  const int delay_mean_ms = atoi(argv[2]) * 1e3;
+  const double delay_mean_ms = atof(argv[2]) * 1e3;
   log_info("The mean of the delay is "
            "\x1b[3m"
-           "%d"
+           "%.0f"
            "\x1b[23m"
            "ms",
            delay_mean_ms);
