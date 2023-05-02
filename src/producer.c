@@ -59,6 +59,11 @@ int main(int argc, char *argv[]) {
            id);
 
   do {
+    log_info("Waiting for "
+             "\x1b[3m"
+             "empty"
+             "\x1b[23m"
+             " sempahore");
     sem_wait(&shared_memory->empty);
 
     message_t message = message_new(id);

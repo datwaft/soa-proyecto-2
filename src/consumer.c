@@ -56,6 +56,11 @@ int main(int argc, char *argv[]) {
            id);
 
   do {
+    log_info("Waiting for "
+             "\x1b[3m"
+             "full"
+             "\x1b[23m"
+             " sempahore");
     sem_wait(&shared_memory->full);
 
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
