@@ -74,5 +74,19 @@ int main(int argc, char *argv[]) {
            "\x1b[22m",
            0);
 
+  shared_memory->active_consumer_counter = atomic_integer_new(0);
+  log_info("Initialized active consumer counter with "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           atomic_integer_get(&shared_memory->active_consumer_counter));
+
+  shared_memory->active_producer_counter = atomic_integer_new(0);
+  log_info("Initialized active producer counter with "
+           "\x1b[1m"
+           "%d"
+           "\x1b[22m",
+           atomic_integer_get(&shared_memory->active_producer_counter));
+
   return EXIT_SUCCESS;
 }

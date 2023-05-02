@@ -58,6 +58,9 @@ int main(int argc, char *argv[]) {
            " as the producer id",
            id);
 
+  atomic_integer_add(&shared_memory->active_producer_counter, 1);
+  log_info("Increased active producer counter");
+
   do {
     int sem_empty_value;
     sem_getvalue(&shared_memory->empty, &sem_empty_value);
@@ -91,6 +94,9 @@ int main(int argc, char *argv[]) {
              delay_us);
     usleep(delay_us * 1e3);
   } while (true);
+
+  atomic_integer_sub(&shared_memory->active_producer_counter, 1);
+  log_info("Decreased active producer counter");
 
   return EXIT_SUCCESS;
 }

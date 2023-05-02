@@ -15,6 +15,8 @@ typedef struct shared_mem_st {
   circbuf_t circbuf;
   sem_t empty;
   sem_t full;
+  atomic_integer_t active_producer_counter;
+  atomic_integer_t active_consumer_counter;
 } shared_mem_t;
 
 shared_mem_t *create_shared_memory(const char *name);

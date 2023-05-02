@@ -55,6 +55,9 @@ int main(int argc, char *argv[]) {
            " as the consumer id",
            id);
 
+  atomic_integer_add(&shared_memory->active_consumer_counter, 1);
+  log_info("Increased active consumer counter");
+
   do {
     int sem_full_value;
     sem_getvalue(&shared_memory->full, &sem_full_value);
@@ -87,6 +90,9 @@ int main(int argc, char *argv[]) {
              delay_us);
     usleep(delay_us * 1e3);
   } while (true);
+
+  atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
+  log_info("Decreased active consumer counter");
 
   return EXIT_SUCCESS;
 }

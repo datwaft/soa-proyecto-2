@@ -53,6 +53,12 @@ int main(int argc, char *argv[]) {
            "\x1b[23m"
            " semaphore");
 
+  atomic_integer_destroy(&shared_memory->active_consumer_counter);
+  log_info("Destroyed active consumer counter mutex");
+
+  atomic_integer_destroy(&shared_memory->active_producer_counter);
+  log_info("Destroyed active producer counter mutex");
+
   int err_free = free_shared_memory(buffer_name);
   if (err_free == IPC_FAILURE) {
     log_error("Error while freeing shared memory: "
