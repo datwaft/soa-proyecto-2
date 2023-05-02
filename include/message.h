@@ -24,4 +24,7 @@ message_t message_new(int64_t producer_id);
 
 bool message_is_valid(message_t const *message);
 
+// buffer must have a size of at least 83 + TIMESTAMP_LENGTH + 1
+void message_tostring(message_t const *message, char *buffer);
+
 #endif // !MESSAGE_H

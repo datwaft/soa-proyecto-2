@@ -1,5 +1,6 @@
 #include "message.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -20,4 +21,25 @@ message_t message_new(int64_t producer_id) {
 bool message_is_valid(message_t const *message) {
   return (message->producer_id != -1) && (message->creation.seconds != -1) &&
          (message->creation.milliseconds != -1) && (message->random_key != -1);
+}
+
+void message_tostring(message_t const *message, char *buffer) {
+  char timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(timestamp, message->creation.seconds,
+                message->creation.milliseconds);
+  sprintf(buffer,
+          "{ producer_id: "
+          "\x1b[32m"
+          "%ld"
+          "\x1b[39m"
+          ", creation: "
+          "\x1b[33m"
+          "%s"
+          "\x1b[39m"
+          ", random_key: "
+          "\x1b[34m"
+          "%d"
+          "\x1b[39m"
+          " }",
+          message->producer_id, timestamp, message->random_key);
 }
