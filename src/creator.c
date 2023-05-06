@@ -8,9 +8,9 @@
 #include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
+#include "gui.h"
 #include "logging.h"
 #include "shared_memory.h"
-#include "gui.h"
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -89,13 +89,23 @@ int main(int argc, char *argv[]) {
            "%d"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->active_producer_counter));
-
+  char buffer[50];
+  sprintf(buffer, "%s", "hello");
   shared_memory->finished_flag = atomic_boolean_new(false);
   log_info("Initialized "
            "\x1b[3m"
            "finished"
            "\x1b[23m"
            " flag");
+
+  /************************************************************************************/
+
+  // shared_memory = get_shared_memory(buffer_name);
+
+  // for (;;) {
+  //   atomic_integer_t ai = shared_memory->active_consumer_counter;
+  //   log_info("%d", ai.value);
+  // }
 
   // return EXIT_SUCCESS;
   return g_application_run(G_APPLICATION(application_new()), 0, 0);
