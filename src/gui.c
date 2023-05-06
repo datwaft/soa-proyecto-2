@@ -1,0 +1,35 @@
+#include "gui.h"
+
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+GtkApplication *application_new(void) {
+  GtkApplication *application =
+      gtk_application_new(APPLICATION_ID, G_APPLICATION_DEFAULT_FLAGS);
+  g_signal_connect(application, "activate", G_CALLBACK(application_on_activate),
+                   NULL);
+  return application;
+}
+
+
+void application_on_activate(GtkApplication *app, gpointer _) {
+  user_data_t user_data = {
+      .builder = gtk_builder_new_from_resource(TEMPLATE_URI),
+  };
+
+  GtkWidget *window =
+      GTK_WIDGET(gtk_builder_get_object(user_data.builder, "window_main"));
+  gtk_widget_show_all(window);
+
+  gtk_main();
+}
+
+void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
+  gtk_main_quit();
+}
+
+

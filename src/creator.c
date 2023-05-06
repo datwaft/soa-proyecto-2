@@ -10,6 +10,7 @@
 #include "circbuf.h"
 #include "logging.h"
 #include "shared_memory.h"
+#include "gui.h"
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -96,5 +97,6 @@ int main(int argc, char *argv[]) {
            "\x1b[23m"
            " flag");
 
-  return EXIT_SUCCESS;
+  // return EXIT_SUCCESS;
+  return g_application_run(G_APPLICATION(application_new()), 0, 0);
 }

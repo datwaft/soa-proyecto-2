@@ -10,11 +10,13 @@ DOCUMENTATION := README.md CONTRIBUTING.md
 SRC_DIR := src
 HEADER_DIR := include
 TEST_DIR := tests
+RESOURCES_DIR := resources
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 TEST_BUILD_DIR := $(BUILD_DIR)/tests
 TEST_OBJ_DIR := $(TEST_BUILD_DIR)/obj
+SRC_BUILD_DIR := $(BUILD_DIR)/src
 
 # ---------------
 # Target variable
@@ -28,6 +30,15 @@ TARGET_SRC := $(TARGET:$(BUILD_DIR)/%=$(SRC_DIR)/%.c)
 SRCS := $(filter-out $(TARGET_SRC), $(shell find $(SRC_DIR) -name '*.c' 2> /dev/null))
 HEADERS := $(shell find $(HEADER_DIR) -name '*.h' 2> /dev/null)
 TEST_SRCS := $(shell find $(TEST_DIR) -name '*.c' 2> /dev/null)
+
+# -----------------------
+# Resource file variables
+# -----------------------
+RESOURCE_INDEX := application.gresource.xml
+RESOURCES := $(shell find $(RESOURCES_DIR) -type f 2> /dev/null)
+RESOURCES_OBJ := $(OBJ_DIR)/resources.o
+RESOURCES_SRC := $(RESOURCES_OBJ:$(OBJ_DIR)/%.o=$(SRC_BUILD_DIR)/%.c)
+RESOURCES_HEADER := $(RESOURCES_OBJ:$(OBJ_DIR)/%.o=$(HEADER_BUILD_DIR)/%.h)
 
 # -------------------
 # Byproduct variables
@@ -58,8 +69,8 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 CFLAGS += -std=gnu11
-CPPFLAGS += -I$(HEADER_DIR) -MMD -MP
-LDLIBS += -pthread -lm
+CPPFLAGS += -I$(HEADER_DIR) -I$(HEADER_BUILD_DIR) $(shell pkg-config --cflags gtk+-3.0) -MMD -MP
+LDLIBS += -pthread -lm $(shell pkg-config --libs gtk+-3.0)
 LDFLAGS +=
 
 # =================
@@ -74,8 +85,18 @@ all_tests: $(TEST_TARGET)
 .PHONY: dist
 dist: $(DIST)
 
-$(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS) | $(BUILD_DIR)
+$(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS) $(RESOURCES_OBJ) | $(BUILD_DIR)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
+
+$(RESOURCES_SRC): $(RESOURCE_INDEX) $(RESOURCES)
+	@mkdir -p $(@D)
+	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-source $<
+
+$(RESOURCES_HEADER): $(RESOURCE_INDEX) $(RESOURCES)
+	@mkdir -p $(@D)
+	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-header $<
+
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
 $(TEST_BUILD_DIR)/%: $(TEST_OBJ_DIR)/%.o $(OBJS) | $(TEST_BUILD_DIR)
@@ -84,8 +105,13 @@ $(TEST_BUILD_DIR)/%: $(TEST_OBJ_DIR)/%.o $(OBJS) | $(TEST_BUILD_DIR)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(OBJ_DIR)/%.d | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
+$(OBJ_DIR)/%.o: $(SRC_BUILD_DIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
 $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c $(TEST_OBJ_DIR)/%.d | $(TEST_OBJ_DIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
 
 # See https://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 $(DEPS):
@@ -102,7 +128,7 @@ $(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
 # ========================
 # Directory creation rules
 # ========================
-$(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(BUILD_DIR) $(OBJ_DIR) $(DEP_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR):
+$(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(BUILD_DIR) $(OBJ_DIR) $(DEP_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR) $(SRC_BUILD_DIR):
 	mkdir -p $@
 
 # ========================
