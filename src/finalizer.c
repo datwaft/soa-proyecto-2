@@ -8,6 +8,7 @@
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "logging.h"
+#include "message.h"
 #include "shared_memory.h"
 
 int main(int argc, char *argv[]) {
@@ -41,6 +42,26 @@ int main(int argc, char *argv[]) {
   while (atomic_integer_get(&shared_memory->active_producer_counter) > 0) {
     sem_post(&shared_memory->empty);
     sem_wait(&shared_memory->empty);
+  }
+
+  while (atomic_integer_get(&shared_memory->active_consumer_counter) > 0) {
+    sem_wait(&shared_memory->empty);
+
+    size_t field = shared_memory->circbuf.head;
+    bool is_success =
+        circbuf_atomic_push(&shared_memory->circbuf, MESSAGE_SHUTDOWN);
+    if (!is_success) {
+      log_warn("Something went wrong, finalizer tried to push into full "
+               "circular buffer");
+    }
+    log_info("Pushed shutdown message into ["
+             "\x1b[1m"
+             "%zu"
+             "\x1b[22m"
+             "] of the circular buffer",
+             field);
+
+    sem_post(&shared_memory->full);
   }
 
   atomic_integer_destroy(&shared_memory->consumer_id);

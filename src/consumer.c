@@ -79,7 +79,15 @@ int main(int argc, char *argv[]) {
 
     size_t field = shared_memory->circbuf.tail;
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
-    if (!message_is_valid(&message)) {
+    if (message_is_shutdown(&message)) {
+      log_info("Consumed shutdown message from ["
+               "\x1b[1m"
+               "%zu"
+               "\x1b[22m"
+               "] of the circular buffer");
+      sem_post(&shared_memory->empty);
+      break;
+    } else if (message_is_invalid(&message)) {
       log_warn("Something went wrong, consumer tried to consume empty circular "
                "buffer");
     }
