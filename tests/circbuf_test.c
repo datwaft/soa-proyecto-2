@@ -5,6 +5,10 @@
 #include "circbuf.h"
 #include "message.h"
 
+// ===========
+// circbuf_new
+// ===========
+
 Test(circbuf_new, valid) {
   circbuf_t circbuf = circbuf_new();
 
@@ -12,6 +16,10 @@ Test(circbuf_new, valid) {
   cr_expect_eq(circbuf.head, 0);
   cr_expect_eq(circbuf.tail, 0);
 }
+
+// ===========
+// circbuf_get
+// ===========
 
 Test(circbuf_get, valid) {
   circbuf_t circbuf = circbuf_new();
@@ -34,6 +42,10 @@ Test(circbuf_get, invalid) {
 
   cr_expect_not(message_is_valid(&message));
 }
+
+// ============
+// circbuf_push
+// ============
 
 Test(circbuf_push, valid) {
   circbuf_t circbuf = circbuf_new();
@@ -62,6 +74,10 @@ Test(circbuf_push, invalid) {
   cr_expect_eq(circbuf.head, 0);
   cr_expect_eq(circbuf.tail, 0);
 }
+
+// ===========
+// circbuf_pop
+// ===========
 
 Test(circbuf_pop, valid) {
   circbuf_t circbuf = circbuf_new();
