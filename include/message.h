@@ -20,9 +20,19 @@ typedef struct message_st {
     .random_key = -1                                                           \
   }
 
+#define MESSAGE_SHUTDOWN                                                       \
+  (message_t) {                                                                \
+    .producer_id = -2, .creation = {.seconds = -2, .milliseconds = -2},        \
+    .random_key = -2                                                           \
+  }
+
 message_t message_new(int64_t producer_id);
 
 bool message_is_valid(message_t const *message);
+
+bool message_is_invalid(message_t const *message);
+
+bool message_is_shutdown(message_t const *message);
 
 // buffer must have a size of at least 83 + TIMESTAMP_LENGTH + 1
 void message_tostring(message_t const *message, char *buffer);
