@@ -19,8 +19,18 @@ message_t message_new(int64_t producer_id) {
 }
 
 bool message_is_valid(message_t const *message) {
-  return (message->producer_id != -1) && (message->creation.seconds != -1) &&
-         (message->creation.milliseconds != -1) && (message->random_key != -1);
+  return (message->producer_id >= 0) && (message->creation.seconds >= 0) &&
+         (message->creation.milliseconds >= 0) && (message->random_key >= 0);
+}
+
+bool message_is_invalid(message_t const *message) {
+  return (message->producer_id == -1) && (message->creation.seconds == -1) &&
+         (message->creation.milliseconds == -1) && (message->random_key == -1);
+}
+
+bool message_is_shutdown(message_t const *message) {
+  return (message->producer_id == -2) && (message->creation.seconds == -2) &&
+         (message->creation.milliseconds == -2) && (message->random_key == -2);
 }
 
 void message_tostring(message_t const *message, char *buffer) {
