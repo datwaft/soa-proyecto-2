@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   const int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m"
            " as the consumer id",
            id);
@@ -85,7 +85,8 @@ int main(int argc, char *argv[]) {
                "\x1b[1m"
                "%zu"
                "\x1b[22m"
-               "] of the circular buffer");
+               "] of the circular buffer",
+               field);
       sem_post(&shared_memory->empty);
       break;
     } else if (message_is_invalid(&message)) {
@@ -119,11 +120,11 @@ int main(int argc, char *argv[]) {
                "\x1b[1m"
                "%d"
                "\x1b[22m"
-               ") is equal to the PID % 100 ("
+               ") is equal to the PID %% 100 ("
                "\x1b[1m"
                "%d"
                "\x1b[22m"
-               " % 100 = "
+               " %% 100 = "
                "\x1b[1m"
                "%d"
                "\x1b[22m"

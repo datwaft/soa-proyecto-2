@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   const int64_t id = atomic_integer_add(&shared_memory->producer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m"
            " as the producer id",
            id);

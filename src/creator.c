@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   if (circbuf_max_size > CIRCBUF_MAX_SIZE) {
     log_error("Circular buffer size ("
               "\x1b[1m"
-              "%d"
+              "%ld"
               "\x1b[22m"
               ") argument is greater than the maximum "
               "possible ("
@@ -54,21 +54,21 @@ int main(int argc, char *argv[]) {
   shared_memory->consumer_id = atomic_integer_new(0);
   log_info("Initialized consumer id counter with "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->consumer_id));
 
   shared_memory->producer_id = atomic_integer_new(0);
   log_info("Initialized producer id counter with "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->producer_id));
 
   shared_memory->circbuf = circbuf_new(circbuf_max_size);
   log_info("Initialized circular buffer with size "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            circbuf_max_size);
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
            "\x1b[23m"
            " semaphore with a value of "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            circbuf_max_size);
 
@@ -97,14 +97,14 @@ int main(int argc, char *argv[]) {
   shared_memory->active_consumer_counter = atomic_integer_new(0);
   log_info("Initialized active consumer counter with "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->active_consumer_counter));
 
   shared_memory->active_producer_counter = atomic_integer_new(0);
   log_info("Initialized active producer counter with "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->active_producer_counter));
 
