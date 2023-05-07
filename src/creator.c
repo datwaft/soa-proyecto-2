@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  const char *buffer_name = argv[1];
+  char *buffer_name = argv[1];
 
   shared_mem_t *shared_memory = create_shared_memory(buffer_name);
   if (shared_memory == (void *)IPC_FAILURE) {
@@ -98,15 +98,7 @@ int main(int argc, char *argv[]) {
            "\x1b[23m"
            " flag");
 
-  /************************************************************************************/
-
-  // shared_memory = get_shared_memory(buffer_name);
-
-  // for (;;) {
-  //   atomic_integer_t ai = shared_memory->active_consumer_counter;
-  //   log_info("%d", ai.value);
-  // }
-
   // return EXIT_SUCCESS;
-  return g_application_run(G_APPLICATION(application_new()), 0, 0);
+  // return g_application_run(G_APPLICATION(application_new()), 0, 0);
+  return launch_gui_log(buffer_name);
 }
