@@ -9,12 +9,14 @@
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "datetime.h"
+#include "event.h"
 #include "logging.h"
 #include "message.h"
 #include "random.h"
 #include "shared_memory.h"
 
 static shared_mem_t *shared_memory;
+static int64_t id;
 
 static void interrupt_handler(int signal);
 
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  const int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
+  id = atomic_integer_add(&shared_memory->consumer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -65,6 +67,8 @@ int main(int argc, char *argv[]) {
 
   atomic_integer_add(&shared_memory->active_consumer_counter, 1);
   log_info("Increased active consumer counter");
+
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_init(id));
 
   do {
     int sem_full_value;
@@ -114,6 +118,9 @@ int main(int argc, char *argv[]) {
              atomic_integer_get(&shared_memory->active_consumer_counter),
              atomic_integer_get(&shared_memory->active_producer_counter));
 
+    atomic_array_push(&shared_memory->event_history,
+                      event_new_consume(id, message));
+
     pid_t pid = getpid();
     if (message.random_key == (pid % 100)) {
       log_info("The message's random key ("
@@ -154,6 +161,8 @@ int main(int argc, char *argv[]) {
            "\x1b[22;33m",
            new_counter_value);
 
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
+
   return EXIT_SUCCESS;
 }
 
@@ -166,5 +175,8 @@ void interrupt_handler(int signal) {
            "%ld"
            "\x1b[22;33m",
            new_counter_value);
+
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
+
   exit(EXIT_SUCCESS);
 }
