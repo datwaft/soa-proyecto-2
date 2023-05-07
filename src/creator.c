@@ -118,14 +118,9 @@ int main(int argc, char *argv[]) {
            "\x1b[23m"
            " flag");
 
-<<<<<<< HEAD
-  // return EXIT_SUCCESS;
-  // return g_application_run(G_APPLICATION(application_new()), 0, 0);
-  return launch_gui_log(buffer_name);
-=======
   shared_memory->event_history = atomic_array_new();
   log_info("Initialized event history");
+  return launch_gui_log(buffer_name);
 
-  return EXIT_SUCCESS;
->>>>>>> main
+  // return EXIT_SUCCESS;
 }
