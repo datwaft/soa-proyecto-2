@@ -37,3 +37,7 @@ event_t event_new_consumer_exit(int64_t consumer_id) {
                    .consumer_id = consumer_id,
                    .message = MESSAGE_INVALID};
 }
+
+bool event_is_invalid(event_t const *event) {
+  return event->kind == EVENT_KIND_invalid;
+}

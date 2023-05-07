@@ -1,5 +1,4 @@
 #include <criterion/criterion.h>
-#include <criterion/internal/assert.h>
 
 #include "event.h"
 #include "message.h"
@@ -76,4 +75,20 @@ Test(event_new_consumer_exit, standard) {
   cr_expect_eq(event.kind, EVENT_KIND_consumer_exit);
   cr_expect_eq(event.consumer_id, 99);
   cr_expect(message_is_invalid(&event.message));
+}
+
+// ================
+// event_is_invalid
+// ================
+
+Test(event_is_invalid, invalid) {
+  event_t event = EVENT_INVALID;
+
+  cr_expect(event_is_invalid(&event));
+}
+
+Test(event_is_invalid, valid) {
+  event_t event = event_new_produce(99, message_new(88));
+
+  cr_expect_not(event_is_invalid(&event));
 }
