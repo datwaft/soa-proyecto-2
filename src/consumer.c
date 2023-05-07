@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "atomic_integer.h"
@@ -111,6 +112,26 @@ int main(int argc, char *argv[]) {
              " active producers",
              atomic_integer_get(&shared_memory->active_consumer_counter),
              atomic_integer_get(&shared_memory->active_producer_counter));
+
+    pid_t pid = getpid();
+    if (message.random_key == (pid % 100)) {
+      log_info("The message's random key ("
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               ") is equal to the PID % 100 ("
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               " % 100 = "
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               ")",
+               message.random_key, pid, pid % 100);
+      sem_post(&shared_memory->empty);
+      break;
+    }
 
     sem_post(&shared_memory->empty);
 
