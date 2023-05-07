@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
            "\x1b[22m",
            circbuf_max_size);
 
-  sem_init(&shared_memory->empty, true, CIRCBUF_MAX_SIZE);
+  sem_init(&shared_memory->empty, true, circbuf_max_size);
   log_info("Initialized "
            "\x1b[3m"
            "empty"
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
            "\x1b[1m"
            "%d"
            "\x1b[22m",
-           CIRCBUF_MAX_SIZE);
+           circbuf_max_size);
 
   sem_init(&shared_memory->full, true, 0);
   log_info("Initialized "
