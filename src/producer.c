@@ -12,12 +12,14 @@
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "datetime.h"
+#include "event.h"
 #include "logging.h"
 #include "message.h"
 #include "random.h"
 #include "shared_memory.h"
 
 static shared_mem_t *shared_memory;
+static int64_t id;
 
 static void interrupt_handler(int signal);
 
@@ -58,16 +60,18 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  const int64_t id = atomic_integer_add(&shared_memory->producer_id, 1);
+  id = atomic_integer_add(&shared_memory->producer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m"
            " as the producer id",
            id);
 
   atomic_integer_add(&shared_memory->active_producer_counter, 1);
   log_info("Increased active producer counter");
+
+  atomic_array_push(&shared_memory->event_history, event_new_producer_init(id));
 
   do {
     int sem_empty_value;
@@ -122,16 +126,19 @@ int main(int argc, char *argv[]) {
              atomic_integer_get(&shared_memory->active_consumer_counter),
              atomic_integer_get(&shared_memory->active_producer_counter));
 
+    atomic_array_push(&shared_memory->event_history,
+                      event_new_produce(id, message));
+
     sem_post(&shared_memory->full);
 
-    int64_t delay_us = rand_exp(lambda);
+    int64_t delay_ms = rand_exp(lambda);
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
              "\x1b[23m"
              "ms before producing once again...",
-             delay_us);
-    usleep(delay_us * 1e3);
+             delay_ms);
+    usleep(delay_ms * 1e3);
   } while (true);
 
   int64_t new_counter_value =
@@ -141,6 +148,8 @@ int main(int argc, char *argv[]) {
            "%ld"
            "\x1b[22;33m",
            new_counter_value);
+
+  atomic_array_push(&shared_memory->event_history, event_new_producer_exit(id));
 
   return EXIT_SUCCESS;
 }
@@ -154,5 +163,8 @@ void interrupt_handler(int signal) {
            "%ld"
            "\x1b[22;33m",
            new_counter_value);
+
+  atomic_array_push(&shared_memory->event_history, event_new_producer_exit(id));
+
   exit(EXIT_SUCCESS);
 }

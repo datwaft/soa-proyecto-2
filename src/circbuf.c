@@ -3,8 +3,9 @@
 #include <semaphore.h>
 #include <stdbool.h>
 
-circbuf_t circbuf_new(void) {
+circbuf_t circbuf_new(size_t max_size) {
   circbuf_t object = {
+      .max_size = max_size > CIRCBUF_MAX_SIZE ? CIRCBUF_MAX_SIZE : max_size,
       .size = 0,
       .head = 0,
       .tail = 0,
@@ -17,15 +18,15 @@ message_t circbuf_get(circbuf_t const *circbuf, size_t pos) {
   if (pos >= circbuf->size) {
     return CIRCBUF_NOT_FOUND;
   }
-  return circbuf->array[(circbuf->tail + pos) % CIRCBUF_MAX_SIZE];
+  return circbuf->array[(circbuf->tail + pos) % circbuf->max_size];
 }
 
 bool circbuf_push(circbuf_t *circbuf, message_t message) {
-  if (circbuf->size >= CIRCBUF_MAX_SIZE) {
+  if (circbuf->size >= circbuf->max_size) {
     return false;
   }
   circbuf->array[circbuf->head] = message;
-  circbuf->head = (circbuf->head + 1) % CIRCBUF_MAX_SIZE;
+  circbuf->head = (circbuf->head + 1) % circbuf->max_size;
   circbuf->size += 1;
   return true;
 }
@@ -35,7 +36,7 @@ message_t circbuf_pop(circbuf_t *circbuf) {
     return CIRCBUF_NOT_FOUND;
   }
   message_t message = circbuf->array[circbuf->tail];
-  circbuf->tail = (circbuf->tail + 1) % CIRCBUF_MAX_SIZE;
+  circbuf->tail = (circbuf->tail + 1) % circbuf->max_size;
   circbuf->size -= 1;
   return message;
 }

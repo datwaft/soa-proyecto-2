@@ -3,17 +3,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "atomic_integer.h"
 #include "circbuf.h"
 #include "datetime.h"
+#include "event.h"
 #include "logging.h"
 #include "message.h"
 #include "random.h"
 #include "shared_memory.h"
 
 static shared_mem_t *shared_memory;
+static int64_t id;
 
 static void interrupt_handler(int signal);
 
@@ -54,16 +57,18 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  const int64_t id = atomic_integer_add(&shared_memory->consumer_id, 1);
+  id = atomic_integer_add(&shared_memory->consumer_id, 1);
   log_info("Assigned "
            "\x1b[1m"
-           "%d"
+           "%ld"
            "\x1b[22m"
            " as the consumer id",
            id);
 
   atomic_integer_add(&shared_memory->active_consumer_counter, 1);
   log_info("Increased active consumer counter");
+
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_init(id));
 
   do {
     int sem_full_value;
@@ -84,7 +89,8 @@ int main(int argc, char *argv[]) {
                "\x1b[1m"
                "%zu"
                "\x1b[22m"
-               "] of the circular buffer");
+               "] of the circular buffer",
+               field);
       sem_post(&shared_memory->empty);
       break;
     } else if (message_is_invalid(&message)) {
@@ -112,16 +118,39 @@ int main(int argc, char *argv[]) {
              atomic_integer_get(&shared_memory->active_consumer_counter),
              atomic_integer_get(&shared_memory->active_producer_counter));
 
+    atomic_array_push(&shared_memory->event_history,
+                      event_new_consume(id, message));
+
+    pid_t pid = getpid();
+    if (message.random_key == (pid % 100)) {
+      log_info("The message's random key ("
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               ") is equal to the PID %% 100 ("
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               " %% 100 = "
+               "\x1b[1m"
+               "%d"
+               "\x1b[22m"
+               ")",
+               message.random_key, pid, pid % 100);
+      sem_post(&shared_memory->empty);
+      break;
+    }
+
     sem_post(&shared_memory->empty);
 
-    int64_t delay_us = rand_exp(lambda);
+    int64_t delay_ms = rand_exp(lambda);
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
              "\x1b[23m"
              "ms before consuming once again...",
-             delay_us);
-    usleep(delay_us * 1e3);
+             delay_ms);
+    usleep(delay_ms * 1e3);
   } while (true);
 
   int64_t new_counter_value =
@@ -131,6 +160,8 @@ int main(int argc, char *argv[]) {
            "%ld"
            "\x1b[22;33m",
            new_counter_value);
+
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
 
   return EXIT_SUCCESS;
 }
@@ -144,5 +175,8 @@ void interrupt_handler(int signal) {
            "%ld"
            "\x1b[22;33m",
            new_counter_value);
+
+  atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
+
   exit(EXIT_SUCCESS);
 }
