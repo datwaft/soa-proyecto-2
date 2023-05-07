@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "atomic_array.h"
 #include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
@@ -114,6 +115,9 @@ int main(int argc, char *argv[]) {
            "finished"
            "\x1b[23m"
            " flag");
+
+  shared_memory->event_history = atomic_array_new();
+  log_info("Initialized event history");
 
   return EXIT_SUCCESS;
 }

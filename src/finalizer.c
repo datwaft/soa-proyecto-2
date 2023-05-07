@@ -93,12 +93,14 @@ int main(int argc, char *argv[]) {
   atomic_integer_destroy(&shared_memory->active_producer_counter);
   log_info("Destroyed active producer counter mutex");
 
-  atomic_boolean_destroy(&shared_memory->finished_flag);
-  log_info("Destroyed "
-           "\x1b[3m"
-           "finished"
-           "\x1b[23m"
-           " flag mutex");
+  log_important("Won't destroy "
+                "\x1b[3m"
+                "finished"
+                "\x1b[23m"
+                " flag mutex yet, the creator may use it");
+
+  log_important(
+      "Won't destroy event history mutex yet, the creator may use it");
 
   int err_free = free_shared_memory(buffer_name);
   if (err_free == IPC_FAILURE) {
@@ -109,7 +111,7 @@ int main(int argc, char *argv[]) {
               strerror(errno));
     return EXIT_FAILURE;
   }
-  log_info("Freed shared memory with buffer name "
+  log_info("Unlinked shared memory with buffer name "
            "\x1b[1;3m"
            "%s"
            "\x1b[22;23m",
