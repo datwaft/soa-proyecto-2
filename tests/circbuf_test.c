@@ -1,4 +1,6 @@
 #include <criterion/criterion.h>
+#include <criterion/internal/assert.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -10,8 +12,9 @@
 // ===========
 
 Test(circbuf_new, valid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
 
+  cr_expect_eq(circbuf.max_size, 16);
   cr_expect_eq(circbuf.size, 0);
   cr_expect_eq(circbuf.head, 0);
   cr_expect_eq(circbuf.tail, 0);
@@ -22,7 +25,7 @@ Test(circbuf_new, valid) {
 // ===========
 
 Test(circbuf_get, valid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
   circbuf_push(&circbuf, message_new(99));
   circbuf_push(&circbuf, message_new(99));
   circbuf_push(&circbuf, message_new(1));
@@ -37,7 +40,7 @@ Test(circbuf_get, valid) {
 }
 
 Test(circbuf_get, invalid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
   message_t message = circbuf_get(&circbuf, 0);
 
   cr_expect_not(message_is_valid(&message));
@@ -48,7 +51,7 @@ Test(circbuf_get, invalid) {
 // ============
 
 Test(circbuf_push, valid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
   circbuf_push(&circbuf, message_new(1));
   circbuf_push(&circbuf, message_new(2));
   circbuf_push(&circbuf, message_new(3));
@@ -56,21 +59,24 @@ Test(circbuf_push, valid) {
   message_t expected[CIRCBUF_MAX_SIZE] = {message_new(1), message_new(2),
                                           message_new(3)};
 
-  cr_expect_arr_eq(circbuf.array, expected, CIRCBUF_MAX_SIZE);
+  for (size_t i = 0; i < circbuf.max_size; ++i) {
+    cr_expect_eq(circbuf.array[i].producer_id, expected[i].producer_id);
+  }
+  cr_expect_eq(circbuf.max_size, 16);
   cr_expect_eq(circbuf.size, 3);
   cr_expect_eq(circbuf.head, 3);
   cr_expect_eq(circbuf.tail, 0);
 }
 
 Test(circbuf_push, invalid) {
-  circbuf_t circbuf = circbuf_new();
-  for (int i = 0; i < CIRCBUF_MAX_SIZE; ++i) {
+  circbuf_t circbuf = circbuf_new(16);
+  for (size_t i = 0; i < circbuf.max_size; ++i) {
     cr_expect(circbuf_push(&circbuf, message_new(i + 1)));
   }
   bool was_successful = circbuf_push(&circbuf, message_new(99));
 
   cr_expect_not(was_successful);
-  cr_expect_eq(circbuf.size, CIRCBUF_MAX_SIZE);
+  cr_expect_eq(circbuf.size, circbuf.max_size);
   cr_expect_eq(circbuf.head, 0);
   cr_expect_eq(circbuf.tail, 0);
 }
@@ -80,7 +86,7 @@ Test(circbuf_push, invalid) {
 // ===========
 
 Test(circbuf_pop, valid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
   circbuf_push(&circbuf, message_new(88));
   circbuf_push(&circbuf, message_new(99));
   circbuf_push(&circbuf, message_new(1));
@@ -98,7 +104,7 @@ Test(circbuf_pop, valid) {
 }
 
 Test(circbuf_pop, invalid) {
-  circbuf_t circbuf = circbuf_new();
+  circbuf_t circbuf = circbuf_new(16);
   message_t result = circbuf_pop(&circbuf);
 
   cr_expect_not(message_is_valid(&result));

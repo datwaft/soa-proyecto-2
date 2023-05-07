@@ -7,19 +7,20 @@
 
 #include "message.h"
 
-#define CIRCBUF_MAX_SIZE 16
+#define CIRCBUF_MAX_SIZE 1024
 
 #define CIRCBUF_NOT_FOUND MESSAGE_INVALID
 
 typedef struct circbuf_st {
   message_t array[CIRCBUF_MAX_SIZE];
+  size_t max_size;
   size_t size;
   size_t head;
   size_t tail;
   sem_t mutex;
 } circbuf_t;
 
-circbuf_t circbuf_new(void);
+circbuf_t circbuf_new(size_t max_size);
 
 message_t circbuf_get(circbuf_t const *circbuf, size_t pos);
 
