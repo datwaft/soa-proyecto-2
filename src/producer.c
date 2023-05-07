@@ -124,14 +124,14 @@ int main(int argc, char *argv[]) {
 
     sem_post(&shared_memory->full);
 
-    int64_t delay_us = rand_exp(lambda);
+    int64_t delay_ms = rand_exp(lambda);
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
              "\x1b[23m"
              "ms before producing once again...",
-             delay_us);
-    usleep(delay_us * 1e3);
+             delay_ms);
+    usleep(delay_ms * 1e3);
   } while (true);
 
   int64_t new_counter_value =
