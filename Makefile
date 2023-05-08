@@ -115,7 +115,7 @@ $(DEPS):
 # =================
 # Distribution rule
 # =================
-$(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(RESOURCES_DIR) $(MAKEFILE) $(DOCUMENTATION)
+$(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(RESOURCE_INDEX) $(RESOURCES_DIR) $(MAKEFILE) $(DOCUMENTATION)
 	mkdir $(basename $@)
 	cp -r $^ $(basename $@)
 	tar -zcvf $@ $(basename $@)
