@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
     int64_t start_ms = time_since_epoch_ms();
     sem_wait(&shared_memory->full);
     int64_t end_ms = time_since_epoch_ms();
-
     stats.sem_blocked_ms += (end_ms - start_ms);
 
     size_t field = shared_memory->circbuf.tail;

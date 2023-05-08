@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h> //used to calculate sem waiting
+#include <time.h>
 #include <unistd.h>
 
 #include "atomic_boolean.h"
@@ -21,23 +21,15 @@
 
 static shared_mem_t *shared_memory;
 static int64_t id;
-
-static void interrupt_handler(int signal);
-
-typedef struct producer_stats_st {
-  int64_t producer_id;
+static struct {
   int64_t wait_time_ms;
   int64_t sem_blocked_ms;
   int messages_qty;
-} producer_stats_t;
+} stats = {.wait_time_ms = 0, .sem_blocked_ms = 0, .messages_qty = 0};
 
-producer_stats_t producer_stats = {.producer_id = 0,
-                                   .wait_time_ms = 0,
-                                   .sem_blocked_ms = 0,
-                                   .messages_qty = 0};
+static void interrupt_handler(int signal);
 
-time_t start_t, end_t;
-double diff_t;
+static void report_stats(void);
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -77,9 +69,6 @@ int main(int argc, char *argv[]) {
   }
 
   id = atomic_integer_add(&shared_memory->producer_id, 1);
-
-  producer_stats.producer_id = id; // saving producer id number
-
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -103,14 +92,10 @@ int main(int argc, char *argv[]) {
                " sempahore...");
     }
 
-    time(&start_t); // getting start time blocked by semaphore
-
+    int64_t start_ms = time_since_epoch_ms();
     sem_wait(&shared_memory->empty);
-
-    time(&end_t); // getting the end time blocked by semaphore
-    diff_t = difftime(end_t, start_t);
-    producer_stats.sem_blocked_ms +=
-        (int64_t)(diff_t * 1000); // saving time in ms blocked by sem.
+    int64_t end_ms = time_since_epoch_ms();
+    stats.sem_blocked_ms += (end_ms - start_ms);
 
     if (atomic_boolean_get(&shared_memory->finished_flag)) {
       log_info("Detected "
@@ -141,9 +126,6 @@ int main(int argc, char *argv[]) {
              "\x1b[22m"
              "] of the circular buffer",
              message_string, field);
-
-    producer_stats.messages_qty += 1; // saving quantity of messages
-
     log_info("    "
              "There are "
              "\x1b[1m"
@@ -160,12 +142,12 @@ int main(int argc, char *argv[]) {
     atomic_array_push(&shared_memory->event_history,
                       event_new_produce(id, message));
 
+    stats.messages_qty += 1;
+
     sem_post(&shared_memory->full);
 
     int64_t delay_ms = rand_exp(lambda);
-
-    producer_stats.wait_time_ms += delay_ms; // saving waiting time
-
+    stats.wait_time_ms += delay_ms;
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
@@ -185,41 +167,7 @@ int main(int argc, char *argv[]) {
 
   atomic_array_push(&shared_memory->event_history, event_new_producer_exit(id));
 
-  // Showing statistics
-  time_t wait_time_sec = (producer_stats.wait_time_ms / 1000) + 21600;
-  time_t wait_time_ms = producer_stats.wait_time_ms % 1000;
-  time_t sema_time_sec = (producer_stats.sem_blocked_ms / 1000) + 21600;
-  time_t sema_time_ms = producer_stats.sem_blocked_ms % 1000;
-  char wait_hour_format[TIMESTAMP_LENGTH + 1];
-  char sema_hour_format[TIMESTAMP_LENGTH + 1];
-  get_timestamp(wait_hour_format, wait_time_sec, wait_time_ms);
-  get_timestamp(sema_hour_format, sema_time_sec, sema_time_ms);
-  log_info("\x1b[1;39m" // Bold (1;) & White (39m)
-           "\n \n PRODUCER - FINAL EXECUTION: STATISTICS"
-           "\x1b[22;39m" // Normal & white
-           "\x1b[3;39m"  // Italic & white
-           "\n Producer identification: "
-           "\x1b[1;32m" // Bold ( 1; ) & Green ( 32m )
-           "%ld"
-           "\x1b[22;39m"
-           "\n Messages pushed into the Buffer: "
-           "\x1b[1;33m"
-           "%d"
-           "\x1b[22;39m" // Italic (22;) & White (39m)
-           "\n Time consumed waiting to use the buffer: "
-           "\x1b[1;33m"
-           "%s "
-           "[%ld ms]"
-           "\x1b[22;39m" // Italic & white
-           "\n Time consumed locked by semaphores: "
-           "\x1b[1;33m"
-           "%s "
-           "[%ld ms]"
-           "\x1b[22;39m"
-           "\n",
-           producer_stats.producer_id, producer_stats.messages_qty,
-           wait_hour_format, producer_stats.wait_time_ms, sema_hour_format,
-           producer_stats.sem_blocked_ms);
+  report_stats();
 
   return EXIT_SUCCESS;
 }
@@ -236,5 +184,68 @@ void interrupt_handler(int signal) {
 
   atomic_array_push(&shared_memory->event_history, event_new_producer_exit(id));
 
+  report_stats();
+
   exit(EXIT_SUCCESS);
+}
+
+static void report_stats(void) {
+  time_t wait_time_sec = (stats.wait_time_ms / 1000) + 21600;
+  time_t wait_time_ms = stats.wait_time_ms % 1000;
+  char wait_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(wait_time_timestamp, wait_time_sec, wait_time_ms);
+
+  time_t sema_time_sec = (stats.sem_blocked_ms / 1000) + 21600;
+  time_t sema_time_ms = stats.sem_blocked_ms % 1000;
+  char sema_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(sema_time_timestamp, sema_time_sec, sema_time_ms);
+
+  fprintf(stderr,
+          "\n"
+          "\x1b[1m"
+          "PRODUCER - STATISTICS"
+          "\x1b[22m"
+          "\n"
+          "\x1b[3m"
+          "Producer identification: "
+          "\x1b[23m"
+          "\x1b[1;32m"
+          "%ld"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Messages produced: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%d"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed waiting to access the buffer: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed locked by semaphores: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n",
+          id, stats.messages_qty, wait_time_timestamp, stats.wait_time_ms,
+          sema_time_timestamp, stats.sem_blocked_ms);
 }
