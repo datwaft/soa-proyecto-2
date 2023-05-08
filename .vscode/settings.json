@@ -2,5 +2,10 @@
   "C_Cpp.formatting": "clangFormat",
   "editor.formatOnSave": true,
   "C_Cpp.clang_format_fallbackStyle": "LLVM",
-  "C_Cpp.codeAnalysis.clangTidy.enabled": true
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+  "files.associations": {
+    "shared_memory.h": "c",
+    "circbuf.h": "c",
+    "time.h": "c"
+  }
 }

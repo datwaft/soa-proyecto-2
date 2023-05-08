@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h> //used to calculate sem waiting
 #include <unistd.h>
 
 #include "atomic_boolean.h"
@@ -22,6 +23,21 @@ static shared_mem_t *shared_memory;
 static int64_t id;
 
 static void interrupt_handler(int signal);
+
+typedef struct producer_stats_st {
+  int64_t producer_id;
+  int64_t wait_time_ms;
+  int64_t sem_blocked_ms;
+  int messages_qty;
+} producer_stats_t;
+
+producer_stats_t producer_stats = {.producer_id = 0,
+                                   .wait_time_ms = 0,
+                                   .sem_blocked_ms = 0,
+                                   .messages_qty = 0};
+
+time_t start_t, end_t;
+double diff_t;
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -61,6 +77,9 @@ int main(int argc, char *argv[]) {
   }
 
   id = atomic_integer_add(&shared_memory->producer_id, 1);
+
+  producer_stats.producer_id = id; // saving producer id number
+
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -83,7 +102,15 @@ int main(int argc, char *argv[]) {
                "\x1b[23m"
                " sempahore...");
     }
+
+    time(&start_t); // getting start time blocked by semaphore
+
     sem_wait(&shared_memory->empty);
+
+    time(&end_t); // getting the end time blocked by semaphore
+    diff_t = difftime(end_t, start_t);
+    producer_stats.sem_blocked_ms +=
+        (int64_t)(diff_t * 1000); // saving time in ms blocked by sem.
 
     if (atomic_boolean_get(&shared_memory->finished_flag)) {
       log_info("Detected "
@@ -95,6 +122,7 @@ int main(int argc, char *argv[]) {
                "true"
                "\x1b[22;23m");
       sem_post(&shared_memory->empty);
+
       break;
     }
 
@@ -113,6 +141,9 @@ int main(int argc, char *argv[]) {
              "\x1b[22m"
              "] of the circular buffer",
              message_string, field);
+
+    producer_stats.messages_qty += 1; // saving quantity of messages
+
     log_info("    "
              "There are "
              "\x1b[1m"
@@ -132,6 +163,9 @@ int main(int argc, char *argv[]) {
     sem_post(&shared_memory->full);
 
     int64_t delay_ms = rand_exp(lambda);
+
+    producer_stats.wait_time_ms += delay_ms; // saving waiting time
+
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
@@ -150,6 +184,42 @@ int main(int argc, char *argv[]) {
            new_counter_value);
 
   atomic_array_push(&shared_memory->event_history, event_new_producer_exit(id));
+
+  // Showing statistics
+  time_t wait_time_sec = (producer_stats.wait_time_ms / 1000) + 21600;
+  time_t wait_time_ms = producer_stats.wait_time_ms % 1000;
+  time_t sema_time_sec = (producer_stats.sem_blocked_ms / 1000) + 21600;
+  time_t sema_time_ms = producer_stats.sem_blocked_ms % 1000;
+  char wait_hour_format[TIMESTAMP_LENGTH + 1];
+  char sema_hour_format[TIMESTAMP_LENGTH + 1];
+  get_timestamp(wait_hour_format, wait_time_sec, wait_time_ms);
+  get_timestamp(sema_hour_format, sema_time_sec, sema_time_ms);
+  log_info("\x1b[1;39m" // Bold (1;) & White (39m)
+           "\n \n PRODUCER - FINAL EXECUTION: STATISTICS"
+           "\x1b[22;39m" // Normal & white
+           "\x1b[3;39m"  // Italic & white
+           "\n Producer identification: "
+           "\x1b[1;32m" // Bold ( 1; ) & Green ( 32m )
+           "%ld"
+           "\x1b[22;39m"
+           "\n Messages pushed into the Buffer: "
+           "\x1b[1;33m"
+           "%d"
+           "\x1b[22;39m" // Italic (22;) & White (39m)
+           "\n Time consumed waiting to use the buffer: "
+           "\x1b[1;33m"
+           "%s "
+           "[%ld ms]"
+           "\x1b[22;39m" // Italic & white
+           "\n Time consumed locked by semaphores: "
+           "\x1b[1;33m"
+           "%s "
+           "[%ld ms]"
+           "\x1b[22;39m"
+           "\n",
+           producer_stats.producer_id, producer_stats.messages_qty,
+           wait_hour_format, producer_stats.wait_time_ms, sema_hour_format,
+           producer_stats.sem_blocked_ms);
 
   return EXIT_SUCCESS;
 }

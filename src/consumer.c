@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h> //used to calculate sem waiting
 #include <unistd.h>
 
 #include "atomic_integer.h"
@@ -19,6 +20,21 @@ static shared_mem_t *shared_memory;
 static int64_t id;
 
 static void interrupt_handler(int signal);
+
+typedef struct consumer_stats_st {
+  int64_t consumer_id;
+  int64_t wait_time_ms;
+  int64_t sem_blocked_ms;
+  int messages_qty;
+} consumer_stats_t;
+
+consumer_stats_t consumer_stats = {.consumer_id = 0,
+                                   .wait_time_ms = 0,
+                                   .sem_blocked_ms = 0,
+                                   .messages_qty = 0};
+
+time_t start_t, end_t;
+double diff_t;
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -58,6 +74,9 @@ int main(int argc, char *argv[]) {
   }
 
   id = atomic_integer_add(&shared_memory->consumer_id, 1);
+
+  consumer_stats.consumer_id = id; // saving consumer id number
+
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -80,7 +99,14 @@ int main(int argc, char *argv[]) {
                "\x1b[23m"
                " sempahore...");
     }
+    time(&start_t); // getting start time blocked for semaphore
+
     sem_wait(&shared_memory->full);
+
+    time(&end_t); // getting the end time blocked by semaphore
+    diff_t = difftime(end_t, start_t);
+    consumer_stats.sem_blocked_ms +=
+        (int64_t)(diff_t * 1000); // saving time in ms blocked by sem.
 
     size_t field = shared_memory->circbuf.tail;
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
@@ -105,6 +131,9 @@ int main(int argc, char *argv[]) {
              "\x1b[22m"
              "] of the circular buffer",
              message_string, field);
+
+    consumer_stats.messages_qty += 1; // saving quantity of messages
+
     log_info("    "
              "There are "
              "\x1b[1m"
@@ -144,6 +173,9 @@ int main(int argc, char *argv[]) {
     sem_post(&shared_memory->empty);
 
     int64_t delay_ms = rand_exp(lambda);
+
+    consumer_stats.wait_time_ms += delay_ms; // saving waiting time
+
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
@@ -162,6 +194,42 @@ int main(int argc, char *argv[]) {
            new_counter_value);
 
   atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
+
+  // Showing statistics
+  time_t wait_time_sec = (consumer_stats.wait_time_ms / 1000) + 21600;
+  time_t wait_time_ms = consumer_stats.wait_time_ms % 1000;
+  time_t sema_time_sec = (consumer_stats.sem_blocked_ms / 1000) + 21600;
+  time_t sema_time_ms = consumer_stats.sem_blocked_ms % 1000;
+  char wait_hour_format[TIMESTAMP_LENGTH + 1];
+  char sema_hour_format[TIMESTAMP_LENGTH + 1];
+  get_timestamp(wait_hour_format, wait_time_sec, wait_time_ms);
+  get_timestamp(sema_hour_format, sema_time_sec, sema_time_ms);
+  log_info("\x1b[1;39m" // Bold (1;) & White (39m)
+           "\n \n CONSUMER - FINAL EXECUTION: STATISTICS"
+           "\x1b[22;39m" // Normal & white
+           "\x1b[3;39m"  // Italic & white
+           "\n Consumer identification: "
+           "\x1b[1;32m" // Bold ( 1; ) & Green ( 32m )
+           "%ld"
+           "\x1b[22;39m"
+           "\n Messages pulled from the Buffer: "
+           "\x1b[1;33m"
+           "%d"
+           "\x1b[22;39m"
+           "\n Time consumed waiting to access the buffer: "
+           "\x1b[1;33m"
+           "%s "
+           "[%ld ms]"
+           "\x1b[22;39m"
+           "\n Time consumed locked by semaphores: "
+           "\x1b[1;33m"
+           "%s "
+           "[%ld ms]"
+           "\x1b[22;39m"
+           "\n",
+           consumer_stats.consumer_id, consumer_stats.messages_qty,
+           wait_hour_format, consumer_stats.wait_time_ms, sema_hour_format,
+           consumer_stats.sem_blocked_ms);
 
   return EXIT_SUCCESS;
 }
