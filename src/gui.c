@@ -68,7 +68,7 @@ void application_on_activate(GtkApplication *app, gpointer _) {
 
   char consumer_counter_str[20];
   char producer_counter_str[20];
-  // char msg_id[53];
+  // char buffer_content[53];
   shared_mem_t *shared_memory = get_shared_memory(buffer_name_g);
   while (1) {
     while (gtk_events_pending())
@@ -92,8 +92,10 @@ void print_all_buffer_contents(GtkTextBuffer *buffer,
 
   circbuf_t *circ_buf = &shared_memory->circbuf;
   size_t size = circ_buf->max_size;
-  char msg_id[53];
+  size_t head = circ_buf->head;
+  size_t tail = circ_buf->tail;
 
+  char buffer_content[53];
   GtkTextIter end;
   gtk_text_buffer_get_end_iter(buffer, &end);
 
@@ -101,31 +103,34 @@ void print_all_buffer_contents(GtkTextBuffer *buffer,
   time_t s, ms;
   time_since_epoch(&s, &ms);
   get_timestamp(timestamp, s, ms);
-
   char message_with_timestamp[4 + TIMESTAMP_LENGTH + 5 + 0 + 4 + 1 + 1];
   sprintf(message_with_timestamp, " [ %s ] %s \n", timestamp,
           "==================================");
-
   gtk_text_buffer_insert(buffer, &end, message_with_timestamp, -1);
+
+  char head_tail_str[50];
+  sprintf(head_tail_str, "Head Position: %ld, Tail Position: %ld\n", head,
+          tail);
+  gtk_text_buffer_insert(buffer, &end, head_tail_str, -1);
 
   for (size_t i = 0; i < size; i++) {
     message_t msg = circ_buf->array[i];
 
     if (msg.producer_id > 0) {
-      sprintf(msg_id,
+      sprintf(buffer_content,
               "Buffer Position: %ld | Producer Id: %ld | Random Key: %d\n", i,
               msg.producer_id, msg.random_key);
-      // g_print(msg_id);
-      gtk_text_buffer_insert(buffer, &end, msg_id, -1);
+      // g_print(buffer_content);
+      gtk_text_buffer_insert(buffer, &end, buffer_content, -1);
     } else {
-      sprintf(msg_id,
-              "Buffer Position: %ld | Producer Id: %s | Random Key: %s\n", i,
-              "-", "-");
-      // g_print(msg_id);
-      gtk_text_buffer_insert(buffer, &end, msg_id, -1);
+      sprintf(buffer_content, "Buffer: empty\n");
+
+      // g_print(buffer_content);
+      gtk_text_buffer_insert(buffer, &end, buffer_content, -1);
+      break;
     }
   }
-  // sleep(1);
+
   // g_print("------------------------------------------\n");
   gtk_text_buffer_insert(
       buffer, &end, "===============================================\n", -1);
