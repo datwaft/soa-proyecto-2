@@ -1,5 +1,6 @@
 #include "datetime.h"
 
+#include <bits/time.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -16,6 +17,12 @@ void time_since_epoch(time_t *seconds, time_t *milliseconds) {
   if (milliseconds != NULL) {
     *milliseconds = floor(now_tv.tv_usec / 1e3);
   }
+}
+
+int64_t time_since_epoch_ms(void) {
+  struct timespec time;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &time);
+  return (time.tv_sec * 1e3) + (time.tv_nsec / 1e6);
 }
 
 void get_timestamp(char *buffer, time_t seconds, time_t milliseconds) {
