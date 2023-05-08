@@ -109,8 +109,7 @@ int main(int argc, char *argv[]) {
            "%ld"
            "\x1b[22m",
            atomic_integer_get(&shared_memory->active_producer_counter));
-  char buffer[50];
-  sprintf(buffer, "%s", "hello");
+
   shared_memory->finished_flag = atomic_boolean_new(false);
   log_info("Initialized "
            "\x1b[3m"
@@ -120,7 +119,7 @@ int main(int argc, char *argv[]) {
 
   shared_memory->event_history = atomic_array_new();
   log_info("Initialized event history");
-  return launch_gui_log(buffer_name);
 
-  // return EXIT_SUCCESS;
+  log_info("Running GUI...");
+  return run_gui(buffer_name);
 }

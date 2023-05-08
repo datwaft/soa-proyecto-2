@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-char *buffer_name_g;
+static char const *g_buffer_name;
 
-int launch_gui_log(char *buffer_name) {
-  buffer_name_g = buffer_name;
+int run_gui(char const *buffer_name) {
+  g_buffer_name = buffer_name;
   return g_application_run(G_APPLICATION(application_new()), 0, 0);
 }
 
@@ -55,7 +55,7 @@ void application_on_activate(GtkApplication *app, gpointer _) {
 
   GtkLabel *lbl_buffer_name =
       GTK_LABEL(gtk_builder_get_object(user_data.builder, "lbl_buffer_name"));
-  gtk_label_set_text(lbl_buffer_name, buffer_name_g);
+  gtk_label_set_text(lbl_buffer_name, g_buffer_name);
 
   GtkLabel *lbl_num_consumers =
       GTK_LABEL(gtk_builder_get_object(user_data.builder, "lbl_num_consumers"));
@@ -72,7 +72,7 @@ void application_on_activate(GtkApplication *app, gpointer _) {
   char consumer_counter_str[20];
   char producer_counter_str[20];
   // char buffer_content[53];
-  shared_mem_t *shared_memory = get_shared_memory(buffer_name_g);
+  shared_mem_t *shared_memory = get_shared_memory(g_buffer_name);
 
   while (1) {
     while (gtk_events_pending())

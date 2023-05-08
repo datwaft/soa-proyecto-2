@@ -14,7 +14,7 @@ typedef struct user_data_st {
 
 GtkApplication *application_new(void);
 
-int launch_gui_log(char *buffer_name);
+int run_gui(char const *buffer_name);
 
 void application_on_activate(GtkApplication *app, gpointer user_data);
 
