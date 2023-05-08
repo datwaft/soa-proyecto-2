@@ -70,14 +70,36 @@ message_t circbuf_atomic_pop(circbuf_t *circbuf) {
 void circbuf_destroy(circbuf_t *circbuf) { sem_destroy(&circbuf->mutex); }
 
 void circbuf_tostring(circbuf_t *circbuf, char *buffer) {
-  if (circbuf->size == 0) {
-    buffer += sprintf(buffer, "");
-    return;
-  }
-  for (size_t i = 0; i < circbuf->size; i++) {
-    message_t message = circbuf_get(circbuf, i);
+  for (size_t i = 0; i < circbuf->max_size; ++i) {
+    message_t message = circbuf->array[i];
     char message_buffer[83 + TIMESTAMP_LENGTH + 1];
     message_tostring_no_color(&message, message_buffer);
-    buffer += sprintf(buffer, "[%zu] %s\n", i, message_buffer);
+    if (message_is_shutdown(&message)) {
+      strcpy(message_buffer, "");
+    }
+    if (circbuf->head == circbuf->tail) {
+      if (circbuf->size == 0) {
+        strcpy(message_buffer, "");
+      }
+    } else if (circbuf->head < circbuf->tail) {
+      if (i >= circbuf->head && i < circbuf->tail) {
+        strcpy(message_buffer, "");
+      }
+    } else {
+      if (i < circbuf->tail || i >= circbuf->head) {
+        strcpy(message_buffer, "");
+      }
+    }
+
+    char prefix[16] = "";
+    if (i == circbuf->head && i == circbuf->tail) {
+      strcpy(prefix, "Head + Tail => ");
+    } else if (i == circbuf->head) {
+      strcpy(prefix, "Head => ");
+    } else if (i == circbuf->tail) {
+      strcpy(prefix, "Tail => ");
+    }
+
+    buffer += sprintf(buffer, "%s [%zu] %s\n", prefix, i, message_buffer);
   }
 }

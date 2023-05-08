@@ -65,6 +65,6 @@ void atomic_array_tostring(atomic_array_t *atomic_array, char *buffer) {
   for (size_t i = 0; i < atomic_array->size; i++) {
     char event_buffer[142 + (TIMESTAMP_LENGTH * 2) + 1];
     event_tostring_no_color(&atomic_array->array[i], event_buffer);
-    buffer += sprintf(buffer, "[%zu] %s\n", i, event_buffer);
+    buffer += sprintf(buffer, "%s\n", event_buffer);
   }
 }
