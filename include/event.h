@@ -23,6 +23,10 @@ typedef struct event_st {
     int64_t consumer_id;
   };
   message_t message;
+  struct {
+    time_t seconds;
+    int64_t milliseconds;
+  } timestamp;
 } event_t;
 
 event_t event_new_producer_init(int64_t producer_id);
