@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,16 +90,11 @@ int main(int argc, char *argv[]) {
                " sempahore...");
     }
 
-    time_t start_t;
-    time(&start_t);
-
+    int64_t start_ms = time_since_epoch_ms();
     sem_wait(&shared_memory->full);
+    int64_t end_ms = time_since_epoch_ms();
 
-    time_t end_t;
-    time(&end_t);
-
-    double diff_t = difftime(end_t, start_t);
-    stats.sem_blocked_ms += (int64_t)(diff_t * 1000);
+    stats.sem_blocked_ms += (end_ms - start_ms);
 
     size_t field = shared_memory->circbuf.tail;
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
