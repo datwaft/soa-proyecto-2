@@ -17,6 +17,7 @@ OBJ_DIR := $(BUILD_DIR)/obj
 TEST_BUILD_DIR := $(BUILD_DIR)/tests
 TEST_OBJ_DIR := $(TEST_BUILD_DIR)/obj
 SRC_BUILD_DIR := $(BUILD_DIR)/src
+HEADER_BUILD_DIR := $(BUILD_DIR)/include
 
 # ---------------
 # Target variable
@@ -68,9 +69,9 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wformat=2 -Wno-unused-parameter -Wshadow \
 					-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
-CFLAGS += -std=gnu11
-CPPFLAGS += -I$(HEADER_DIR) -I$(HEADER_BUILD_DIR) $(shell pkg-config --cflags gtk+-3.0) -MMD -MP
-LDLIBS += -pthread -lm $(shell pkg-config --libs gtk+-3.0)
+CFLAGS += -std=gnu11 $(shell pkg-config --cflags gtk+-3.0)
+CPPFLAGS += -I$(HEADER_DIR) -I$(HEADER_BUILD_DIR) -MMD -MP
+LDLIBS += -pthread $(shell pkg-config --libs gtk+-3.0) -lm
 LDFLAGS +=
 
 # =================
@@ -86,17 +87,7 @@ all_tests: $(TEST_TARGET)
 dist: $(DIST)
 
 $(BUILD_DIR)/%: $(OBJ_DIR)/%.o $(OBJS) $(RESOURCES_OBJ) | $(BUILD_DIR)
-	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
-
-$(RESOURCES_SRC): $(RESOURCE_INDEX) $(RESOURCES)
-	@mkdir -p $(@D)
-	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-source $<
-
-$(RESOURCES_HEADER): $(RESOURCE_INDEX) $(RESOURCES)
-	@mkdir -p $(@D)
-	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-header $<
-
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
 $(TEST_BUILD_DIR)/%: $(TEST_OBJ_DIR)/%.o $(OBJS) | $(TEST_BUILD_DIR)
@@ -112,6 +103,11 @@ $(OBJ_DIR)/%.o: $(SRC_BUILD_DIR)/%.c
 $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c $(TEST_OBJ_DIR)/%.d | $(TEST_OBJ_DIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
+$(RESOURCES_SRC): $(RESOURCE_INDEX) $(RESOURCES) | $(SRC_BUILD_DIR)
+	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-source $<
+
+$(RESOURCES_HEADER): $(RESOURCE_INDEX) $(RESOURCES) | $(HEADER_BUILD_DIR)
+	glib-compile-resources --target=$@ --sourcedir=$(RESOURCES_DIR) --generate-header $<
 
 # See https://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 $(DEPS):
@@ -119,7 +115,7 @@ $(DEPS):
 # =================
 # Distribution rule
 # =================
-$(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
+$(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(RESOURCES_DIR) $(MAKEFILE) $(DOCUMENTATION)
 	mkdir $(basename $@)
 	cp -r $^ $(basename $@)
 	tar -zcvf $@ $(basename $@)
@@ -128,7 +124,7 @@ $(DIST): $(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
 # ========================
 # Directory creation rules
 # ========================
-$(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(BUILD_DIR) $(OBJ_DIR) $(DEP_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR) $(SRC_BUILD_DIR):
+$(SRC_DIR) $(HEADER_DIR) $(TEST_DIR) $(RESOURCES_DIR) $(BUILD_DIR) $(OBJ_DIR) $(DEP_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR) $(SRC_BUILD_DIR) $(HEADER_BUILD_DIR):
 	mkdir -p $@
 
 # ========================
