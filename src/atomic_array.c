@@ -1,6 +1,8 @@
 #include "atomic_array.h"
 
+#include "datetime.h"
 #include "event.h"
+#include <stdio.h>
 
 atomic_array_t atomic_array_new(void) {
   atomic_array_t object = {.size = 0};
@@ -53,4 +55,16 @@ event_t atomic_array_get_unsafe(atomic_array_t const *atomic_array,
     return EVENT_INVALID;
   }
   return atomic_array->array[pos];
+}
+
+void atomic_array_tostring(atomic_array_t *atomic_array, char *buffer) {
+  if (atomic_array->size == 0) {
+    buffer += sprintf(buffer, "");
+    return;
+  }
+  for (size_t i = 0; i < atomic_array->size; i++) {
+    char event_buffer[142 + (TIMESTAMP_LENGTH * 2) + 1];
+    event_tostring_no_color(&atomic_array->array[i], event_buffer);
+    buffer += sprintf(buffer, "[%zu] %s\n", i, event_buffer);
+  }
 }
