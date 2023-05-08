@@ -13,5 +13,5 @@ jobs:
       - uses: egor-tensin/setup-clang@v1
         with:
           version: 16
-      - run: sudo apt-get -y install libcriterion-dev
+      - run: sudo apt-get -y install libcriterion-dev libgtk-3-dev
       - run: make test
