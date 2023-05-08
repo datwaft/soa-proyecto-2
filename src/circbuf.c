@@ -1,7 +1,12 @@
 #include "circbuf.h"
+#include "datetime.h"
+#include "message.h"
 
 #include <semaphore.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 circbuf_t circbuf_new(size_t max_size) {
   circbuf_t object = {
@@ -63,3 +68,16 @@ message_t circbuf_atomic_pop(circbuf_t *circbuf) {
 }
 
 void circbuf_destroy(circbuf_t *circbuf) { sem_destroy(&circbuf->mutex); }
+
+void circbuf_tostring(circbuf_t *circbuf, char *buffer) {
+  if (circbuf->size == 0) {
+    buffer += sprintf(buffer, "");
+    return;
+  }
+  for (size_t i = 0; i < circbuf->size; i++) {
+    message_t message = circbuf_get(circbuf, i);
+    char message_buffer[83 + TIMESTAMP_LENGTH + 1];
+    message_tostring_no_color(&message, message_buffer);
+    buffer += sprintf(buffer, "[%zu] %s\n", i, message_buffer);
+  }
+}

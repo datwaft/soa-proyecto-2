@@ -29,4 +29,8 @@ event_t atomic_array_pop_unsafe(atomic_array_t *atomic_array);
 
 event_t atomic_array_get_unsafe(atomic_array_t const *atomic_array, size_t pos);
 
+// `buffer` must have a size of at least
+// `(142 + (TIMESTAMP_LENGTH * 2) + 1) * atomic_array->size + 1`
+void atomic_array_tostring(atomic_array_t *atomic_array, char *buffer);
+
 #endif // !ATOMIC_ARRAY_H

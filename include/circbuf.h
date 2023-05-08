@@ -36,4 +36,8 @@ message_t circbuf_atomic_pop(circbuf_t *circbuf);
 
 void circbuf_destroy(circbuf_t *circbuf);
 
+// `buffer` must have a size of at least
+// `(83 + TIMESTAMP_LENGTH + 1) * circbuf->max_size + 1`
+void circbuf_tostring(circbuf_t *circbuf, char *buffer);
+
 #endif // !CIRCULAR_BUFFER_H

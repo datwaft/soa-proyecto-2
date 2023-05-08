@@ -9,6 +9,7 @@
 #include "atomic_boolean.h"
 #include "atomic_integer.h"
 #include "circbuf.h"
+#include "gui.h"
 #include "logging.h"
 #include "shared_memory.h"
 
@@ -119,5 +120,6 @@ int main(int argc, char *argv[]) {
   shared_memory->event_history = atomic_array_new();
   log_info("Initialized event history");
 
-  return EXIT_SUCCESS;
+  log_info("Running GUI...");
+  return run_gui(buffer_name);
 }

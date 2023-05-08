@@ -79,7 +79,7 @@ void event_tostring_no_color(event_t const *event, char *buffer) {
     get_timestamp(timestamp, event->timestamp.seconds,
                   event->timestamp.milliseconds);
     char message[83 + TIMESTAMP_LENGTH + 1];
-    message_tostring(&event->message, message);
+    message_tostring_no_color(&event->message, message);
     sprintf(buffer, "[%s] Consumer '%ld' has consumed '%s' message", timestamp,
             event->consumer_id, message);
     break;
@@ -89,7 +89,7 @@ void event_tostring_no_color(event_t const *event, char *buffer) {
     get_timestamp(timestamp, event->timestamp.seconds,
                   event->timestamp.milliseconds);
     char message[83 + TIMESTAMP_LENGTH + 1];
-    message_tostring(&event->message, message);
+    message_tostring_no_color(&event->message, message);
     sprintf(buffer, "[%s] Producer '%ld' has produced '%s' message", timestamp,
             event->producer_id, message);
     break;
