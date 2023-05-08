@@ -34,7 +34,10 @@ bool message_is_invalid(message_t const *message);
 
 bool message_is_shutdown(message_t const *message);
 
-// buffer must have a size of at least 83 + TIMESTAMP_LENGTH + 1
+// `buffer` must have a size of at least `83 + TIMESTAMP_LENGTH + 1`
 void message_tostring(message_t const *message, char *buffer);
+
+// `buffer` must have a size of at least `83 + TIMESTAMP_LENGTH + 1`
+void message_tostring_no_color(message_t const *message, char *buffer);
 
 #endif // !MESSAGE_H

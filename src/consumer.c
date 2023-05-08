@@ -1,9 +1,11 @@
 #include <errno.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "atomic_integer.h"
@@ -17,8 +19,15 @@
 
 static shared_mem_t *shared_memory;
 static int64_t id;
+static struct {
+  int64_t wait_time_ms;
+  int64_t sem_blocked_ms;
+  int messages_qty;
+} stats = {.wait_time_ms = 0, .sem_blocked_ms = 0, .messages_qty = 0};
 
 static void interrupt_handler(int signal);
+
+static void report_stats(void);
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -80,7 +89,11 @@ int main(int argc, char *argv[]) {
                "\x1b[23m"
                " sempahore...");
     }
+
+    int64_t start_ms = time_since_epoch_ms();
     sem_wait(&shared_memory->full);
+    int64_t end_ms = time_since_epoch_ms();
+    stats.sem_blocked_ms += (end_ms - start_ms);
 
     size_t field = shared_memory->circbuf.tail;
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
@@ -121,6 +134,8 @@ int main(int argc, char *argv[]) {
     atomic_array_push(&shared_memory->event_history,
                       event_new_consume(id, message));
 
+    stats.messages_qty += 1;
+
     pid_t pid = getpid();
     if (message.random_key == (pid % 100)) {
       log_info("The message's random key ("
@@ -144,6 +159,7 @@ int main(int argc, char *argv[]) {
     sem_post(&shared_memory->empty);
 
     int64_t delay_ms = rand_exp(lambda);
+    stats.wait_time_ms += delay_ms;
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
@@ -163,10 +179,12 @@ int main(int argc, char *argv[]) {
 
   atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
 
+  report_stats();
+
   return EXIT_SUCCESS;
 }
 
-void interrupt_handler(int signal) {
+static void interrupt_handler(int signal) {
   int64_t new_counter_value =
       atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
   fprintf(stderr, "\n");
@@ -178,5 +196,68 @@ void interrupt_handler(int signal) {
 
   atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
 
+  report_stats();
+
   exit(EXIT_SUCCESS);
+}
+
+static void report_stats(void) {
+  time_t wait_time_sec = (stats.wait_time_ms / 1000) + 21600;
+  time_t wait_time_ms = stats.wait_time_ms % 1000;
+  char wait_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(wait_time_timestamp, wait_time_sec, wait_time_ms);
+
+  time_t sema_time_sec = (stats.sem_blocked_ms / 1000) + 21600;
+  time_t sema_time_ms = stats.sem_blocked_ms % 1000;
+  char sema_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(sema_time_timestamp, sema_time_sec, sema_time_ms);
+
+  fprintf(stderr,
+          "\n"
+          "\x1b[1m"
+          "CONSUMER - STATISTICS"
+          "\x1b[22m"
+          "\n"
+          "\x1b[3m"
+          "Consumer identification: "
+          "\x1b[23m"
+          "\x1b[1;32m"
+          "%ld"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Messages consumed: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%d"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed waiting: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed locked by semaphores: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n",
+          id, stats.messages_qty, wait_time_timestamp, stats.wait_time_ms,
+          sema_time_timestamp, stats.sem_blocked_ms);
 }
