@@ -43,4 +43,7 @@ event_t event_new_consumer_exit(int64_t consumer_id);
 
 bool event_is_invalid(event_t const *event);
 
+// `buffer` must have a size of at least `142 + (TIMESTAMP_LENGTH * 2) + 1`
+void event_tostring_no_color(event_t const *event, char *buffer);
+
 #endif // !EVENT_H
