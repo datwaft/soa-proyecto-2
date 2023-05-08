@@ -1,6 +1,7 @@
 #include "gui.h"
 
 #include "circbuf.h"
+#include "datetime.h"
 #include "logging.h"
 #include "shared_memory.h"
 #include <math.h>
@@ -96,6 +97,17 @@ void print_all_buffer_contents(GtkTextBuffer *buffer,
   GtkTextIter end;
   gtk_text_buffer_get_end_iter(buffer, &end);
 
+  char timestamp[TIMESTAMP_LENGTH + 1];
+  time_t s, ms;
+  time_since_epoch(&s, &ms);
+  get_timestamp(timestamp, s, ms);
+
+  char message_with_timestamp[4 + TIMESTAMP_LENGTH + 5 + 0 + 4 + 1 + 1];
+  sprintf(message_with_timestamp, " [ %s ] %s \n", timestamp,
+          "==================================");
+
+  gtk_text_buffer_insert(buffer, &end, message_with_timestamp, -1);
+
   for (size_t i = 0; i < size; i++) {
     message_t msg = circ_buf->array[i];
 
@@ -113,9 +125,10 @@ void print_all_buffer_contents(GtkTextBuffer *buffer,
       gtk_text_buffer_insert(buffer, &end, msg_id, -1);
     }
   }
+  // sleep(1);
   // g_print("------------------------------------------\n");
-  gtk_text_buffer_insert(buffer, &end,
-                         "------------------------------------------\n", -1);
+  gtk_text_buffer_insert(
+      buffer, &end, "===============================================\n", -1);
 }
 
 void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
