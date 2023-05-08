@@ -24,4 +24,6 @@ void update_circbuf_content(shared_mem_t *shared_memory,
 void update_event_history_content(shared_mem_t *shared_memory,
                                   user_data_t *user_data);
 
+void window_on_delete_event(GtkWidget *widget);
+
 #endif // !GUI_H

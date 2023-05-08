@@ -72,7 +72,7 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 CFLAGS += -std=gnu11 $(shell pkg-config --cflags gtk+-3.0)
 CPPFLAGS += -I$(HEADER_DIR) -I$(HEADER_BUILD_DIR) -MMD -MP
 LDLIBS += -pthread $(shell pkg-config --libs gtk+-3.0) -lm
-LDFLAGS +=
+LDFLAGS += -rdynamic
 
 # =================
 # Compilation rules

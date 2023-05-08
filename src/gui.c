@@ -15,6 +15,7 @@
 #include "shared_memory.h"
 
 static char const *g_buffer_name;
+static bool finished = false;
 
 int run_gui(char const *buffer_name) {
   g_buffer_name = buffer_name;
@@ -33,6 +34,7 @@ void application_on_activate(GtkApplication *app) {
   user_data_t user_data = {
       .builder = gtk_builder_new_from_resource(TEMPLATE_URI),
   };
+  gtk_builder_connect_signals(user_data.builder, &user_data);
 
   GtkLabel *lbl_buffer_name =
       GTK_LABEL(gtk_builder_get_object(user_data.builder, "lbl_buffer_name"));
@@ -47,6 +49,9 @@ void application_on_activate(GtkApplication *app) {
   while (true) {
     while (gtk_events_pending()) {
       gtk_main_iteration();
+    }
+    if (finished) {
+      break;
     }
 
     char consumer_counter_str[20];
@@ -93,4 +98,4 @@ void update_event_history_content(shared_mem_t *shared_memory,
   gtk_text_buffer_set_text(event_history_text_buffer, buffer, -1);
 }
 
-void window_on_delete_event(GtkWidget *widget) { gtk_main_quit(); }
+void window_on_delete_event(GtkWidget *widget) { finished = true; }
