@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <time.h> //used to calculate sem waiting
+#include <time.h>
 #include <unistd.h>
 
 #include "atomic_integer.h"
@@ -18,23 +18,15 @@
 
 static shared_mem_t *shared_memory;
 static int64_t id;
-
-static void interrupt_handler(int signal);
-
-typedef struct consumer_stats_st {
-  int64_t consumer_id;
+static struct {
   int64_t wait_time_ms;
   int64_t sem_blocked_ms;
   int messages_qty;
-} consumer_stats_t;
+} stats = {.wait_time_ms = 0, .sem_blocked_ms = 0, .messages_qty = 0};
 
-consumer_stats_t consumer_stats = {.consumer_id = 0,
-                                   .wait_time_ms = 0,
-                                   .sem_blocked_ms = 0,
-                                   .messages_qty = 0};
+static void interrupt_handler(int signal);
 
-time_t start_t, end_t;
-double diff_t;
+static void report_stats(void);
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -75,8 +67,6 @@ int main(int argc, char *argv[]) {
 
   id = atomic_integer_add(&shared_memory->consumer_id, 1);
 
-  consumer_stats.consumer_id = id; // saving consumer id number
-
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -99,14 +89,17 @@ int main(int argc, char *argv[]) {
                "\x1b[23m"
                " sempahore...");
     }
-    time(&start_t); // getting start time blocked for semaphore
+
+    time_t start_t;
+    time(&start_t);
 
     sem_wait(&shared_memory->full);
 
-    time(&end_t); // getting the end time blocked by semaphore
-    diff_t = difftime(end_t, start_t);
-    consumer_stats.sem_blocked_ms +=
-        (int64_t)(diff_t * 1000); // saving time in ms blocked by sem.
+    time_t end_t;
+    time(&end_t);
+
+    double diff_t = difftime(end_t, start_t);
+    stats.sem_blocked_ms += (int64_t)(diff_t * 1000);
 
     size_t field = shared_memory->circbuf.tail;
     message_t message = circbuf_atomic_pop(&shared_memory->circbuf);
@@ -132,8 +125,6 @@ int main(int argc, char *argv[]) {
              "] of the circular buffer",
              message_string, field);
 
-    consumer_stats.messages_qty += 1; // saving quantity of messages
-
     log_info("    "
              "There are "
              "\x1b[1m"
@@ -149,6 +140,8 @@ int main(int argc, char *argv[]) {
 
     atomic_array_push(&shared_memory->event_history,
                       event_new_consume(id, message));
+
+    stats.messages_qty += 1;
 
     pid_t pid = getpid();
     if (message.random_key == (pid % 100)) {
@@ -173,9 +166,7 @@ int main(int argc, char *argv[]) {
     sem_post(&shared_memory->empty);
 
     int64_t delay_ms = rand_exp(lambda);
-
-    consumer_stats.wait_time_ms += delay_ms; // saving waiting time
-
+    stats.wait_time_ms += delay_ms;
     log_info("Waiting "
              "\x1b[3m"
              "%ld"
@@ -195,46 +186,12 @@ int main(int argc, char *argv[]) {
 
   atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
 
-  // Showing statistics
-  time_t wait_time_sec = (consumer_stats.wait_time_ms / 1000) + 21600;
-  time_t wait_time_ms = consumer_stats.wait_time_ms % 1000;
-  time_t sema_time_sec = (consumer_stats.sem_blocked_ms / 1000) + 21600;
-  time_t sema_time_ms = consumer_stats.sem_blocked_ms % 1000;
-  char wait_hour_format[TIMESTAMP_LENGTH + 1];
-  char sema_hour_format[TIMESTAMP_LENGTH + 1];
-  get_timestamp(wait_hour_format, wait_time_sec, wait_time_ms);
-  get_timestamp(sema_hour_format, sema_time_sec, sema_time_ms);
-  log_info("\x1b[1;39m" // Bold (1;) & White (39m)
-           "\n \n CONSUMER - FINAL EXECUTION: STATISTICS"
-           "\x1b[22;39m" // Normal & white
-           "\x1b[3;39m"  // Italic & white
-           "\n Consumer identification: "
-           "\x1b[1;32m" // Bold ( 1; ) & Green ( 32m )
-           "%ld"
-           "\x1b[22;39m"
-           "\n Messages pulled from the Buffer: "
-           "\x1b[1;33m"
-           "%d"
-           "\x1b[22;39m"
-           "\n Time consumed waiting to access the buffer: "
-           "\x1b[1;33m"
-           "%s "
-           "[%ld ms]"
-           "\x1b[22;39m"
-           "\n Time consumed locked by semaphores: "
-           "\x1b[1;33m"
-           "%s "
-           "[%ld ms]"
-           "\x1b[22;39m"
-           "\n",
-           consumer_stats.consumer_id, consumer_stats.messages_qty,
-           wait_hour_format, consumer_stats.wait_time_ms, sema_hour_format,
-           consumer_stats.sem_blocked_ms);
+  report_stats();
 
   return EXIT_SUCCESS;
 }
 
-void interrupt_handler(int signal) {
+static void interrupt_handler(int signal) {
   int64_t new_counter_value =
       atomic_integer_sub(&shared_memory->active_consumer_counter, 1);
   fprintf(stderr, "\n");
@@ -246,5 +203,68 @@ void interrupt_handler(int signal) {
 
   atomic_array_push(&shared_memory->event_history, event_new_consumer_exit(id));
 
+  report_stats();
+
   exit(EXIT_SUCCESS);
+}
+
+static void report_stats(void) {
+  time_t wait_time_sec = (stats.wait_time_ms / 1000) + 21600;
+  time_t wait_time_ms = stats.wait_time_ms % 1000;
+  char wait_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(wait_time_timestamp, wait_time_sec, wait_time_ms);
+
+  time_t sema_time_sec = (stats.sem_blocked_ms / 1000) + 21600;
+  time_t sema_time_ms = stats.sem_blocked_ms % 1000;
+  char sema_time_timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(sema_time_timestamp, sema_time_sec, sema_time_ms);
+
+  fprintf(stderr,
+          "\n"
+          "\x1b[1m"
+          "CONSUMER - STATISTICS"
+          "\x1b[22m"
+          "\n"
+          "\x1b[3m"
+          "Consumer identification: "
+          "\x1b[23m"
+          "\x1b[1;32m"
+          "%ld"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Messages consumed: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%d"
+          "\x1b[22;39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed waiting to access the buffer: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n"
+          "\x1b[3m"
+          "Time consumed locked by semaphores: "
+          "\x1b[23m"
+          "\x1b[1;33m"
+          "%s"
+          "\x1b[22m"
+          " ("
+          "\x1b[1m"
+          "%ld"
+          "\x1b[22m"
+          "ms)"
+          "\x1b[39m"
+          "\n",
+          id, stats.messages_qty, wait_time_timestamp, stats.wait_time_ms,
+          sema_time_timestamp, stats.sem_blocked_ms);
 }
