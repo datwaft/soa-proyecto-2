@@ -50,4 +50,6 @@ build/finalizer <nombre_del_buffer>
 
   - En este componente se va a mostrar todo lo relacionado con la ejecución de los Productores y Consumidores, que está pasando con cada uno de ellos.
 
-### Ejecución
+![image](https://user-images.githubusercontent.com/37723586/236951166-c94b290b-4d7c-408a-8cb3-f3c10ab36ec0.png)
+
+![image](https://user-images.githubusercontent.com/37723586/236951239-d4f67b99-16ab-46b7-a9f2-94a422fa99eb.png)
