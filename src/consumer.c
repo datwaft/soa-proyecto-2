@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
   }
 
   id = atomic_integer_add(&shared_memory->consumer_id, 1);
-
   log_info("Assigned "
            "\x1b[1m"
            "%ld"
@@ -124,7 +123,6 @@ int main(int argc, char *argv[]) {
              "\x1b[22m"
              "] of the circular buffer",
              message_string, field);
-
     log_info("    "
              "There are "
              "\x1b[1m"
