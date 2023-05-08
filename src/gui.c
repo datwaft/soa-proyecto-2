@@ -21,7 +21,7 @@ int launch_gui_log(char *buffer_name) {
 
 GtkApplication *application_new(void) {
   GtkApplication *application =
-      gtk_application_new(APPLICATION_ID, G_APPLICATION_DEFAULT_FLAGS);
+      gtk_application_new(APPLICATION_ID, G_APPLICATION_FLAGS_NONE);
   g_signal_connect(application, "activate", G_CALLBACK(application_on_activate),
                    NULL);
   return application;
