@@ -53,3 +53,11 @@ void message_tostring(message_t const *message, char *buffer) {
           " }",
           message->producer_id, timestamp, message->random_key);
 }
+
+void message_tostring_no_color(message_t const *message, char *buffer) {
+  char timestamp[TIMESTAMP_LENGTH + 1];
+  get_timestamp(timestamp, message->creation.seconds,
+                message->creation.milliseconds);
+  sprintf(buffer, "{ producer_id: %ld, creation: %s, random_key: %d }",
+          message->producer_id, timestamp, message->random_key);
+}
