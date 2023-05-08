@@ -1,5 +1,6 @@
 #include "gui.h"
 
+#include "atomic_array.h"
 #include "circbuf.h"
 #include "datetime.h"
 #include "logging.h"
@@ -12,9 +13,6 @@
 #include <unistd.h>
 
 char *buffer_name_g;
-
-void print_all_buffer_contents(GtkTextBuffer *buffer,
-                               shared_mem_t *shared_memory);
 
 int launch_gui_log(char *buffer_name) {
   buffer_name_g = buffer_name;
@@ -37,6 +35,11 @@ void application_on_activate(GtkApplication *app, gpointer _) {
 
   GtkTextBuffer *buffer = GTK_TEXT_BUFFER(
       gtk_builder_get_object(user_data.builder, "txt_buff_circular_buffer"));
+
+  GtkTextBuffer *txt_buffer_events = GTK_TEXT_BUFFER(
+      gtk_builder_get_object(user_data.builder, "txt_buffer_events"));
+  GtkTextIter start;
+  gtk_text_buffer_get_start_iter(buffer, &start);
   // GtkTextIter end;
   // gtk_text_buffer_get_end_iter(buffer, &end);
 
@@ -70,6 +73,7 @@ void application_on_activate(GtkApplication *app, gpointer _) {
   char producer_counter_str[20];
   // char buffer_content[53];
   shared_mem_t *shared_memory = get_shared_memory(buffer_name_g);
+
   while (1) {
     while (gtk_events_pending())
       gtk_main_iteration();
@@ -83,12 +87,13 @@ void application_on_activate(GtkApplication *app, gpointer _) {
     gtk_label_set_text(lbl_num_consumers, consumer_counter_str);
     gtk_label_set_text(lbl_num_producers, producer_counter_str);
 
-    print_all_buffer_contents(buffer, shared_memory);
+    update_all_buffer_contents(buffer, shared_memory);
+    update_events(user_data, shared_memory);
   }
 }
 
-void print_all_buffer_contents(GtkTextBuffer *buffer,
-                               shared_mem_t *shared_memory) {
+void update_all_buffer_contents(GtkTextBuffer *buffer,
+                                shared_mem_t *shared_memory) {
 
   circbuf_t *circ_buf = &shared_memory->circbuf;
   size_t size = circ_buf->max_size;
@@ -134,6 +139,40 @@ void print_all_buffer_contents(GtkTextBuffer *buffer,
   // g_print("------------------------------------------\n");
   gtk_text_buffer_insert(
       buffer, &end, "===============================================\n", -1);
+}
+
+// void refresh_text_view(user_data_t user_data, char *text) {
+//   // char text[100] = "hello world";
+//   GtkWidget *txt_buffer = gtk_text_buffer_new(NULL);
+//   GtkTextIter end;
+//   gtk_text_buffer_get_end_iter(GTK_TEXT_BUFFER(txt_buffer), &end);
+//   gtk_text_buffer_insert(GTK_TEXT_BUFFER(txt_buffer), &end, text, -1);
+
+//   GtkTextView *tv = GTK_TEXT_VIEW(
+//       gtk_builder_get_object(user_data.builder, "txt_view_event"));
+//   gtk_text_view_set_buffer(tv, GTK_TEXT_BUFFER(txt_buffer));
+// }
+
+void update_events(user_data_t user_data, shared_mem_t *shared_memory) {
+  char str[sizeof(event_t)];
+
+  GtkWidget *txt_buffer = gtk_text_buffer_new(NULL);
+  GtkTextIter end;
+  gtk_text_buffer_get_end_iter(GTK_TEXT_BUFFER(txt_buffer), &end);
+
+  for (int i = 0; i < ATOMIC_ARRAY_MAX_SIZE; i++) {
+    event_t events = atomic_array_get(&shared_memory->event_history, i);
+    if (events.kind == 6)
+      break;
+
+    sprintf(str, "%d %ld, %ld\n", events.kind, events.producer_id,
+            events.consumer_id);
+    gtk_text_buffer_insert(GTK_TEXT_BUFFER(txt_buffer), &end, str, -1);
+  }
+
+  GtkTextView *tv = GTK_TEXT_VIEW(
+      gtk_builder_get_object(user_data.builder, "txt_view_event"));
+  gtk_text_view_set_buffer(tv, GTK_TEXT_BUFFER(txt_buffer));
 }
 
 void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
