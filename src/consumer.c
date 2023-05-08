@@ -233,7 +233,7 @@ static void report_stats(void) {
           "\x1b[22;39m"
           "\n"
           "\x1b[3m"
-          "Time consumed waiting to access the buffer: "
+          "Time consumed waiting: "
           "\x1b[23m"
           "\x1b[1;33m"
           "%s"
